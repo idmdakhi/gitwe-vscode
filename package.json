@@ -1,0 +1,108 @@
+{
+  "name": "gitwe-vscode",
+  "displayName": "Gitwe",
+  "description": "Git workflow engine right inside VS Code",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitwe.current",
+        "title": "Show Current Branch",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.list",
+        "title": "List Branches",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.start",
+        "title": "Start New Branch",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.finish",
+        "title": "Finish Branch (merge & delete)",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.types",
+        "title": "Show Branch Types",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.status",
+        "title": "Show Branch Tree",
+        "category": "Gitwe"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "gitweBranches",
+          "name": "Git Branches (Tree)"
+        }
+      ]
+    },
+    "menus": {
+      "command-palette": [
+        {
+          "command": "gitwe.current"
+        },
+        {
+          "command": "gitwe.list"
+        },
+        {
+          "command": "gitwe.start"
+        },
+        {
+          "command": "gitwe.finish"
+        },
+        {
+          "command": "gitwe.types"
+        },
+        {
+          "command": "gitwe.status"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Gitwe",
+      "properties": {
+        "gitwe.configPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to custom workflow config file (JSON)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "gitwe": "^2.0.0"
+  }
+}
