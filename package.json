@@ -1,23 +1,48 @@
 {
   "name": "gitwe-vscode",
-  "displayName": "Gitwe",
-  "description": "Git workflow engine right inside VS Code",
-  "version": "1.0.0",
+  "displayName": "Gitwe Workflow Engine",
+  "description": "Visual Git workflow engine for VSCode — start, finish, and visualize branches with custom workflows.",
+  "version": "0.1.0",
+  "publisher": "gitwe",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "SCM Providers"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onCommand:gitwe.start",
+    "onCommand:gitwe.finish",
+    "onCommand:gitwe.graph",
+    "onView:gitwe-branches"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
+        "command": "gitwe.start",
+        "title": "Start Branch",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.finish",
+        "title": "Finish Branch",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.status",
+        "title": "Show Status",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.graph",
+        "title": "Show Graph",
+        "category": "Gitwe"
+      },
+      {
         "command": "gitwe.current",
-        "title": "Show Current Branch",
+        "title": "Current Branch",
         "category": "Gitwe"
       },
       {
@@ -26,63 +51,120 @@
         "category": "Gitwe"
       },
       {
-        "command": "gitwe.start",
-        "title": "Start New Branch",
-        "category": "Gitwe"
-      },
-      {
-        "command": "gitwe.finish",
-        "title": "Finish Branch (merge & delete)",
-        "category": "Gitwe"
-      },
-      {
         "command": "gitwe.types",
         "title": "Show Branch Types",
         "category": "Gitwe"
       },
       {
-        "command": "gitwe.status",
-        "title": "Show Branch Tree",
+        "command": "gitwe.validate",
+        "title": "Validate Workflow Config",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.doctor",
+        "title": "Run Doctor",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.config",
+        "title": "Show Config",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.checkout",
+        "title": "Checkout Branch",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.refresh",
+        "title": "Refresh View",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.startWebGui",
+        "title": "Start WebGUI Server",
+        "category": "Gitwe"
+      },
+      {
+        "command": "gitwe.stopWebGui",
+        "title": "Stop WebGUI Server",
         "category": "Gitwe"
       }
     ],
-    "views": {
-      "explorer": [
+    "viewsContainers": {
+      "activitybar": [
         {
-          "id": "gitweBranches",
-          "name": "Git Branches (Tree)"
+          "id": "gitwe-view",
+          "title": "Gitwe",
+          "icon": "resources/gitwe-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitwe-view": [
+        {
+          "id": "gitwe-branches",
+          "name": "Branches"
         }
       ]
     },
     "menus": {
+      "view/item/context": [
+        {
+          "command": "gitwe.finish",
+          "when": "view == gitwe-branches && viewItem == branch",
+          "group": "inline"
+        },
+        {
+          "command": "gitwe.checkout",
+          "when": "view == gitwe-branches && viewItem == branch",
+          "group": "inline"
+        }
+      ],
       "command-palette": [
         {
-          "command": "gitwe.current"
-        },
-        {
-          "command": "gitwe.list"
-        },
-        {
-          "command": "gitwe.start"
-        },
-        {
-          "command": "gitwe.finish"
-        },
-        {
-          "command": "gitwe.types"
-        },
-        {
-          "command": "gitwe.status"
+          "command": "gitwe.checkout",
+          "when": "false"
         }
       ]
     },
     "configuration": {
       "title": "Gitwe",
       "properties": {
+        "gitwe.workflow": {
+          "type": "string",
+          "enum": [
+            "git-flow",
+            "github-flow",
+            "trunk-based"
+          ],
+          "default": "git-flow",
+          "description": "Built-in workflow to use"
+        },
         "gitwe.configPath": {
           "type": "string",
           "default": "",
-          "description": "Path to custom workflow config file (JSON)"
+          "description": "Path to custom workflow config file (JSON/YAML), relative to workspace root"
+        },
+        "gitwe.autoPush": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically push after finishing a branch"
+        },
+        "gitwe.defaultDelete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Delete branch by default when finishing"
+        },
+        "gitwe.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show current branch in status bar"
+        },
+        "gitwe.refreshInterval": {
+          "type": "number",
+          "default": 30000,
+          "description": "Auto-refresh interval in milliseconds (0 to disable)"
         }
       }
     }
@@ -92,17 +174,23 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
-    "@types/node": "20.x",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.22.0"
   },
   "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
     "gitwe": "^2.0.0"
   }
 }

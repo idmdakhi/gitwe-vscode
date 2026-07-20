@@ -1,58 +1,136 @@
-// vscode-extension/src/extension.ts
 import * as vscode from "vscode";
-import {
-  WorkflowEngine,
-  ShellGitAdapter,
-  gitFlowDefinition,
-} from "gitflow-engine";
-import { getGitRoot, createEngine } from "./utils";
-import { BranchTreeProvider } from "./providers/BranchTreeProvider";
-import { updateStatusBar } from "./statusBar";
+import { GitweClient } from "./gitwe/client";
+import { BranchesTreeProvider } from "./providers/branchesTree";
+import { GraphWebView } from "./providers/graphWebView";
+import { StatusBarProvider } from "./providers/statusBar";
+import { getConfig, onDidChangeConfig } from "./config/settings";
+import * as commands from "./commands";
+import { WebGuiServer } from "./webgui/server";
 
-// دستورات
-import { showCurrentBranch } from "./commands/current";
-import { listBranches } from "./commands/list";
-import { startBranch } from "./commands/start";
-import { finishBranch } from "./commands/finish";
-import { showTypes } from "./commands/types";
-import { showStatus } from "./commands/status";
+let client: GitweClient;
+let treeProvider: BranchesTreeProvider;
+let statusBar: StatusBarProvider;
+let refreshInterval: NodeJS.Timeout | undefined;
 
-export function activate(context: vscode.ExtensionContext) {
-  console.log("gitflow-engine extension is now active!");
+let webGuiServer: WebGuiServer | undefined;
 
-  // ثبت دستورات
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "gitflow-engine.current",
-      showCurrentBranch,
-    ),
-    vscode.commands.registerCommand("gitflow-engine.list", listBranches),
-    vscode.commands.registerCommand("gitflow-engine.start", startBranch),
-    vscode.commands.registerCommand("gitflow-engine.finish", finishBranch),
-    vscode.commands.registerCommand("gitflow-engine.types", showTypes),
-    vscode.commands.registerCommand("gitflow-engine.status", showStatus),
-  );
+export async function activate(context: vscode.ExtensionContext) {
+  // ایجاد کلاینت Gitwe
+  client = new GitweClient(context);
+  await client.initialize();
 
-  // نمایش درخت شاخه‌ها در Sidebar
-  const treeProvider = new BranchTreeProvider();
-  vscode.window.registerTreeDataProvider("gitflowEngineBranches", treeProvider);
-  context.subscriptions.push(treeProvider);
+  // ارائه‌دهنده TreeView
+  treeProvider = new BranchesTreeProvider(client);
+  const treeView = vscode.window.createTreeView("gitwe-branches", {
+    treeDataProvider: treeProvider,
+    showCollapseAll: true,
+  });
+  context.subscriptions.push(treeView);
 
   // نوار وضعیت
-  const statusBarItem = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Left,
-    100,
+  statusBar = new StatusBarProvider(client);
+  context.subscriptions.push(statusBar);
+
+  // ثبت تمام دستورات
+  const commandMap = {
+    "gitwe.start": commands.startHandler,
+    "gitwe.finish": commands.finishHandler,
+    "gitwe.status": commands.statusHandler,
+    "gitwe.graph": commands.graphHandler,
+    "gitwe.current": commands.currentHandler,
+    "gitwe.list": commands.listHandler,
+    "gitwe.types": commands.typesHandler,
+    "gitwe.validate": commands.validateHandler,
+    "gitwe.doctor": commands.doctorHandler,
+    "gitwe.config": commands.configHandler,
+    "gitwe.checkout": commands.checkoutHandler,
+    "gitwe.refresh": commands.refreshHandler,
+  };
+
+  for (const [id, handler] of Object.entries(commandMap)) {
+    const disposable = vscode.commands.registerCommand(id, (...args) =>
+      handler(client, treeProvider, statusBar, ...args),
+    );
+    context.subscriptions.push(disposable);
+  }
+
+  // گوش‌دادن به تغییرات تنظیمات
+  context.subscriptions.push(
+    onDidChangeConfig(() => {
+      statusBar.update();
+      treeProvider.refresh();
+      setupAutoRefresh(context);
+    }),
   );
-  statusBarItem.command = "gitflow-engine.current";
-  context.subscriptions.push(statusBarItem);
 
-  // به‌روزرسانی اولیه
-  updateStatusBar(statusBarItem);
+  // راه‌اندازی تازه‌سازی خودکار
+  setupAutoRefresh(context);
 
-  // گوش‌دادن به تغییرات
-  vscode.workspace.onDidChangeWorkspaceFolders(() => {
-    updateStatusBar(statusBarItem);
+  // نمایش پیام خوش‌آمد
+  vscode.window.showInformationMessage("Gitwe VSCode extension activated!");
+
+  // ثبت دستور برای راه‌اندازی WebGUI
+  const startWebGui = vscode.commands.registerCommand(
+    "gitwe.startWebGui",
+    async () => {
+      if (webGuiServer) {
+        vscode.window.showInformationMessage(
+          `WebGUI already running on http://localhost:${webGuiServer.getPort()}`,
+        );
+        return;
+      }
+      try {
+        webGuiServer = new WebGuiServer(client, 5678);
+        await webGuiServer.start();
+        vscode.window.showInformationMessage(
+          `🌐 WebGUI started at http://localhost:5678`,
+        );
+        // باز کردن در مرورگر پیش‌فرض
+        vscode.env.openExternal(vscode.Uri.parse("http://localhost:5678"));
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Failed to start WebGUI: ${error.message}`,
+        );
+      }
+    },
+  );
+  context.subscriptions.push(startWebGui);
+
+  // دستور توقف WebGUI
+  const stopWebGui = vscode.commands.registerCommand("gitwe.stopWebGui", () => {
+    if (webGuiServer) {
+      webGuiServer.stop();
+      webGuiServer = undefined;
+      vscode.window.showInformationMessage("WebGUI stopped");
+    } else {
+      vscode.window.showWarningMessage("WebGUI is not running");
+    }
   });
+  context.subscriptions.push(stopWebGui);
 }
 
-export function deactivate() {}
+function setupAutoRefresh(context: vscode.ExtensionContext) {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = undefined;
+  }
+
+  const config = getConfig();
+  const interval = config.refreshInterval || 0;
+  if (interval > 0) {
+    refreshInterval = setInterval(() => {
+      treeProvider.refresh();
+      statusBar.update();
+    }, interval);
+    context.subscriptions.push({
+      dispose: () => clearInterval(refreshInterval),
+    });
+  }
+}
+
+export function deactivate() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
+  statusBar?.dispose();
+}
