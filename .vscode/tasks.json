@@ -4,15 +4,9 @@
     {
       "type": "npm",
       "script": "watch",
-      "problemMatcher": "$tsc-watch",
       "isBackground": true,
-      "presentation": {
-        "reveal": "never"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "problemMatcher": "$tsc-watch",
+      "presentation": { "reveal": "never" }
     }
   ]
 }

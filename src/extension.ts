@@ -1,136 +1,79 @@
 import * as vscode from "vscode";
-import { GitweClient } from "./gitwe/client";
-import { BranchesTreeProvider } from "./providers/branchesTree";
-import { GraphWebView } from "./providers/graphWebView";
-import { StatusBarProvider } from "./providers/statusBar";
-import { getConfig, onDidChangeConfig } from "./config/settings";
-import * as commands from "./commands";
-import { WebGuiServer } from "./webgui/server";
+import { GitweBranchesProvider } from "./branchesTreeProvider";
+import { GitweStatusBar } from "./statusBar";
+import { GitwePanel } from "./webview/GitwePanel";
+import { startBranchCommand } from "./commands/start";
+import { finishBranchCommand } from "./commands/finish";
+import { showStatusCommand } from "./commands/status";
+import { showGraphCommand } from "./commands/graph";
+import { runDoctorCommand } from "./commands/doctor";
+import { validateWorkflowCommand } from "./commands/validate";
+import { showTypesCommand } from "./commands/showTypes";
+import { openConfigCommand } from "./commands/openConfig";
+import { checkoutBranchCommand } from "./commands/checkoutBranch";
+import { deleteBranchCommand } from "./commands/deleteBranch";
+import { pullCommand, pushCommand } from "./commands/pullPush";
+import { showCommitInfoCommand } from "./commands/commitInfo";
+import { showCurrentBranchCommand } from "./commands/currentBranch";
 
-let client: GitweClient;
-let treeProvider: BranchesTreeProvider;
-let statusBar: StatusBarProvider;
-let refreshInterval: NodeJS.Timeout | undefined;
+export function activate(context: vscode.ExtensionContext): void {
+  const outputChannel = vscode.window.createOutputChannel("Gitwe");
+  context.subscriptions.push(outputChannel);
 
-let webGuiServer: WebGuiServer | undefined;
-
-export async function activate(context: vscode.ExtensionContext) {
-  // ایجاد کلاینت Gitwe
-  client = new GitweClient(context);
-  await client.initialize();
-
-  // ارائه‌دهنده TreeView
-  treeProvider = new BranchesTreeProvider(client);
-  const treeView = vscode.window.createTreeView("gitwe-branches", {
-    treeDataProvider: treeProvider,
-    showCollapseAll: true,
-  });
+  const branchesProvider = new GitweBranchesProvider(outputChannel);
+  const treeView = vscode.window.createTreeView("gitweBranches", { treeDataProvider: branchesProvider });
   context.subscriptions.push(treeView);
 
-  // نوار وضعیت
-  statusBar = new StatusBarProvider(client);
+  const statusBar = new GitweStatusBar(outputChannel);
   context.subscriptions.push(statusBar);
+  statusBar.show();
 
-  // ثبت تمام دستورات
-  const commandMap = {
-    "gitwe.start": commands.startHandler,
-    "gitwe.finish": commands.finishHandler,
-    "gitwe.status": commands.statusHandler,
-    "gitwe.graph": commands.graphHandler,
-    "gitwe.current": commands.currentHandler,
-    "gitwe.list": commands.listHandler,
-    "gitwe.types": commands.typesHandler,
-    "gitwe.validate": commands.validateHandler,
-    "gitwe.doctor": commands.doctorHandler,
-    "gitwe.config": commands.configHandler,
-    "gitwe.checkout": commands.checkoutHandler,
-    "gitwe.refresh": commands.refreshHandler,
+  const refreshAll = (): void => {
+    branchesProvider.refresh();
+    void statusBar.refresh();
   };
 
-  for (const [id, handler] of Object.entries(commandMap)) {
-    const disposable = vscode.commands.registerCommand(id, (...args) =>
-      handler(client, treeProvider, statusBar, ...args),
-    );
-    context.subscriptions.push(disposable);
-  }
-
-  // گوش‌دادن به تغییرات تنظیمات
-  context.subscriptions.push(
-    onDidChangeConfig(() => {
-      statusBar.update();
-      treeProvider.refresh();
-      setupAutoRefresh(context);
-    }),
-  );
-
-  // راه‌اندازی تازه‌سازی خودکار
-  setupAutoRefresh(context);
-
-  // نمایش پیام خوش‌آمد
-  vscode.window.showInformationMessage("Gitwe VSCode extension activated!");
-
-  // ثبت دستور برای راه‌اندازی WebGUI
-  const startWebGui = vscode.commands.registerCommand(
-    "gitwe.startWebGui",
-    async () => {
-      if (webGuiServer) {
-        vscode.window.showInformationMessage(
-          `WebGUI already running on http://localhost:${webGuiServer.getPort()}`,
-        );
-        return;
-      }
-      try {
-        webGuiServer = new WebGuiServer(client, 5678);
-        await webGuiServer.start();
-        vscode.window.showInformationMessage(
-          `🌐 WebGUI started at http://localhost:5678`,
-        );
-        // باز کردن در مرورگر پیش‌فرض
-        vscode.env.openExternal(vscode.Uri.parse("http://localhost:5678"));
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to start WebGUI: ${error.message}`,
-        );
-      }
-    },
-  );
-  context.subscriptions.push(startWebGui);
-
-  // دستور توقف WebGUI
-  const stopWebGui = vscode.commands.registerCommand("gitwe.stopWebGui", () => {
-    if (webGuiServer) {
-      webGuiServer.stop();
-      webGuiServer = undefined;
-      vscode.window.showInformationMessage("WebGUI stopped");
-    } else {
-      vscode.window.showWarningMessage("WebGUI is not running");
+  // Keep the sidebar/status bar in sync with branch switches, merges, etc. made outside the extension
+  // (terminal `git checkout`, other extensions, ...) by watching .git/HEAD and the refs directory.
+  if (vscode.workspace.workspaceFolders) {
+    for (const folder of vscode.workspace.workspaceFolders) {
+      const watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(folder, ".git/{HEAD,refs/heads/**}"),
+      );
+      watcher.onDidChange(refreshAll);
+      watcher.onDidCreate(refreshAll);
+      watcher.onDidDelete(refreshAll);
+      context.subscriptions.push(watcher);
     }
-  });
-  context.subscriptions.push(stopWebGui);
+  }
+
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration("gitwe")) refreshAll();
+  }));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const register = (command: string, handler: (...args: any[]) => any): void => {
+    context.subscriptions.push(vscode.commands.registerCommand(command, handler));
+  };
+
+  register("gitwe.start", () => startBranchCommand(outputChannel, refreshAll));
+  register("gitwe.finish", (branch?: string) => finishBranchCommand(outputChannel, refreshAll, branch));
+  register("gitwe.status", () => showStatusCommand(outputChannel));
+  register("gitwe.graph", () => showGraphCommand(outputChannel));
+  register("gitwe.doctor", () => runDoctorCommand(outputChannel));
+  register("gitwe.validate", () => validateWorkflowCommand(outputChannel));
+  register("gitwe.showTypes", () => showTypesCommand(outputChannel));
+  register("gitwe.openConfig", () => openConfigCommand());
+  register("gitwe.openDashboard", () => GitwePanel.show(context, outputChannel));
+  register("gitwe.refresh", refreshAll);
+  register("gitwe.checkoutBranch", (branch?: string) => checkoutBranchCommand(outputChannel, refreshAll, branch));
+  register("gitwe.deleteBranch", (branch?: string) => deleteBranchCommand(outputChannel, refreshAll, branch));
+  register("gitwe.pull", () => pullCommand(outputChannel, refreshAll));
+  register("gitwe.push", () => pushCommand(outputChannel));
+  register("gitwe.commitInfo", () => showCommitInfoCommand(outputChannel));
+  register("gitwe.currentBranch", () => showCurrentBranchCommand(outputChannel));
 }
 
-function setupAutoRefresh(context: vscode.ExtensionContext) {
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-    refreshInterval = undefined;
-  }
-
-  const config = getConfig();
-  const interval = config.refreshInterval || 0;
-  if (interval > 0) {
-    refreshInterval = setInterval(() => {
-      treeProvider.refresh();
-      statusBar.update();
-    }, interval);
-    context.subscriptions.push({
-      dispose: () => clearInterval(refreshInterval),
-    });
-  }
-}
-
-export function deactivate() {
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-  }
-  statusBar?.dispose();
+export function deactivate(): void {
+  // Nothing to clean up beyond what's in context.subscriptions.
 }
