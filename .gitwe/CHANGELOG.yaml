@@ -1,0 +1,3 @@
+enabled: false
+path: "CHANGELOG.md"
+template: ".gitwe/CHANGELOG.template.md"

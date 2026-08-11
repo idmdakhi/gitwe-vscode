@@ -3,9 +3,13 @@
 src/**
 out/**
 node_modules/**
+!node_modules/gitwe/**
+!node_modules/js-yaml/**
+!node_modules/argparse/**
 .gitignore
 .eslintrc.json
 esbuild.js
 tsconfig.json
+structure.md
 **/*.map
 **/.DS_Store

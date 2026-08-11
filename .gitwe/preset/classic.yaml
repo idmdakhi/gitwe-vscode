@@ -1,0 +1,70 @@
+# .gitwe/preset/classic.yaml
+version: 1
+name: classic
+
+baseBranches:
+  - name: main
+    aliases: master
+    protected: true
+  - name: develop
+    aliases: dev
+    base: main
+    protected: true
+
+branchTypes:
+  - name: feature
+    aliases: [feat]
+    base: develop
+    target: [develop]
+    prefix: feature/
+  - name: release
+    aliases: [rls, rels]
+    base: develop
+    target: [main, develop]
+    prefix: release/
+  - name: hotfix
+    aliases: [bug, fix, patch]
+    base: main
+    target: [main, develop]
+    prefix: hotfix/
+  - name: support
+    aliases: lts
+    base: main
+    target: main
+    prefix: support/
+
+merge:
+  strategy: merge
+  branchTypes: {}
+  deleteOnFinish: [feature, release, hotfix]
+  squash:
+    branchTypes: [feature]
+    enabled: true
+    default: false
+
+cli:
+  enabled: true
+  interactive: true
+  color: true
+  aliases:
+    fs: finish feature
+    rs: release start
+    hf: hotfix start
+    st: status
+
+versioning:
+  enabled: false
+  path: .gitwe/VERSION.yaml
+
+changelog:
+  enabled: false
+  path: .gitwe/CHANGELOG.yaml
+
+hooks:
+  enabled: true
+  path: .gitwe/hooks
+
+remote:
+  name: origin
+  autoPush: false
+  autoFetch: false

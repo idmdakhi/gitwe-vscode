@@ -1,15 +1,36 @@
 import * as vscode from "vscode";
-import type { BranchTreeNode, DoctorReport } from "gitwe";
-import { getContainer, getSettings, pickWorkspaceFolder } from "../gitweClient";
+import { getEngine, pickWorkspaceFolder } from "../gitweClient";
 import { showGitweError } from "../util/errors";
+
+interface DashboardBaseBranch {
+  name: string;
+  base: string | undefined;
+  exists: boolean;
+  current: boolean;
+  ahead: number;
+  behind: number;
+}
+
+interface DashboardBranchType {
+  name: string;
+  prefix: string;
+  base: string;
+  target: string[];
+  branches: string[];
+}
+
+interface DashboardHealth {
+  level: "ok" | "warning" | "error";
+  message: string;
+}
 
 interface DashboardData {
   workflowName: string;
   currentBranch: string;
   workingTreeClean: boolean;
-  branchTypes: { name: string; prefix: string; baseBranch: string; mergeTargets: string[]; autoTag: boolean }[];
-  tree: BranchTreeNode;
-  doctor: DoctorReport | undefined;
+  baseBranches: DashboardBaseBranch[];
+  branchTypes: DashboardBranchType[];
+  health: DashboardHealth[];
   error: string | undefined;
 }
 
@@ -23,7 +44,7 @@ type InboundMessage =
   | { type: "push" };
 
 /**
- * Singleton webview panel — a visual dashboard on top of the same handlers
+ * Singleton webview panel — a visual dashboard on top of the same `Engine`
  * the tree view and commands use. It doesn't duplicate any gitwe logic:
  * mutating actions (start/finish/pull/push) are delegated straight back to
  * the registered VS Code commands, and this panel just re-fetches +
@@ -46,7 +67,7 @@ export class GitwePanel {
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
-    private readonly context: vscode.ExtensionContext,
+    context: vscode.ExtensionContext,
     private readonly outputChannel: vscode.OutputChannel,
   ) {
     this.panel.webview.html = this.renderShell();
@@ -94,34 +115,37 @@ export class GitwePanel {
       workflowName: "",
       currentBranch: "",
       workingTreeClean: true,
+      baseBranches: [],
       branchTypes: [],
-      tree: { name: "main", isCurrent: false, children: [] },
-      doctor: undefined,
+      health: [],
       error: undefined,
     };
     if (!folder) return { ...empty, error: "Open a folder with a git repository." };
 
-    const container = getContainer(folder, this.outputChannel);
     try {
-      const [currentBranch, workingTreeClean, statusReport] = await Promise.all([
-        container.git.getCurrentBranch(),
-        container.git.isWorkingTreeClean(),
-        container.getStatusHandler.handle({ rootBranch: getSettings().defaultRootBranch }),
-      ]);
+      const engine = await getEngine(folder, this.outputChannel);
+      const [clean, report] = await Promise.all([engine.git.isClean(), engine.overview()]);
 
       return {
-        workflowName: container.workflow.name,
-        currentBranch,
-        workingTreeClean,
-        branchTypes: container.workflow.branchTypes.map((rule) => ({
-          name: rule.name,
-          prefix: rule.prefix,
-          baseBranch: rule.baseBranch,
-          mergeTargets: [...rule.mergeTargets],
-          autoTag: Boolean(rule.autoTag),
+        workflowName: report.workflow,
+        currentBranch: report.currentBranch ?? "(detached)",
+        workingTreeClean: clean,
+        baseBranches: report.baseBranches.map((b) => ({
+          name: b.name,
+          base: b.base,
+          exists: b.exists,
+          current: b.current,
+          ahead: b.ahead,
+          behind: b.behind,
         })),
-        tree: statusReport.tree,
-        doctor: undefined,
+        branchTypes: report.branchTypes.map((t) => ({
+          name: t.name,
+          prefix: t.prefix,
+          base: t.base,
+          target: t.target as string[],
+          branches: t.branches,
+        })),
+        health: report.health,
         error: undefined,
       };
     } catch (error) {
@@ -143,6 +167,9 @@ export class GitwePanel {
   .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.75em; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
   .clean { background: #2ea04326; color: #2ea043; }
   .dirty { background: #d2992226; color: #d29922; }
+  .ok { background: #2ea04326; color: #2ea043; }
+  .warning { background: #d2992226; color: #d29922; }
+  .error { background: #f8514926; color: #f85149; }
   section { margin: 18px 0; }
   h2 { font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.75; margin-bottom: 6px; }
   table { border-collapse: collapse; width: 100%; }
@@ -150,19 +177,18 @@ export class GitwePanel {
   button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 6px 12px; border-radius: 2px; cursor: pointer; margin-right: 8px; }
   button:hover { background: var(--vscode-button-hoverBackground); }
   button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-  ul.tree, ul.tree ul { list-style: none; margin: 0; padding-left: 18px; }
-  ul.tree { padding-left: 0; }
-  ul.tree li { padding: 2px 0; }
+  ul.branches { list-style: none; margin: 4px 0 0; padding-left: 18px; }
+  li.branch-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+  li.branch-row button { padding: 2px 8px; font-size: 0.8em; margin: 0; }
   .current { font-weight: 600; color: var(--vscode-textLink-foreground); }
-  .branch-row { display: flex; align-items: center; justify-content: space-between; }
-  .branch-row button { padding: 2px 8px; font-size: 0.8em; margin: 0; }
-  .error { color: var(--vscode-errorForeground); }
+  .error-box { color: var(--vscode-errorForeground); }
   .toolbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .health-row { padding: 2px 0; }
 </style>
 </head>
 <body>
   <h1>🌿 Gitwe Dashboard <span id="workflow-pill" class="pill"></span></h1>
-  <div id="error" class="error" style="display:none"></div>
+  <div id="error" class="error-box" style="display:none"></div>
 
   <div class="toolbar">
     <button id="start">Start Branch</button>
@@ -178,16 +204,21 @@ export class GitwePanel {
   </section>
 
   <section>
-    <h2>Branch Types</h2>
-    <table id="types-table">
-      <thead><tr><th>Type</th><th>Prefix</th><th>Base</th><th>Merges into</th><th></th></tr></thead>
-      <tbody id="types-body"></tbody>
+    <h2>Health</h2>
+    <div id="health"></div>
+  </section>
+
+  <section>
+    <h2>Base Branches</h2>
+    <table id="base-table">
+      <thead><tr><th>Name</th><th>Parent</th><th>Status</th></tr></thead>
+      <tbody id="base-body"></tbody>
     </table>
   </section>
 
   <section>
-    <h2>Branch Graph</h2>
-    <ul class="tree" id="tree"></ul>
+    <h2>Branch Types</h2>
+    <div id="types"></div>
   </section>
 
 <script nonce="${nonce}">
@@ -202,18 +233,6 @@ export class GitwePanel {
     });
     children.forEach((c) => node.appendChild(c));
     return node;
-  }
-
-  function renderTreeNode(node) {
-    const li = el("li");
-    const label = el("span", { class: node.isCurrent ? "current" : "", text: node.name + (node.isCurrent ? " (current)" : "") });
-    li.appendChild(label);
-    if (node.children && node.children.length > 0) {
-      const ul = el("ul");
-      node.children.forEach((child) => ul.appendChild(renderTreeNode(child)));
-      li.appendChild(ul);
-    }
-    return li;
   }
 
   function render(data) {
@@ -239,21 +258,50 @@ export class GitwePanel {
       );
     }
 
-    const typesBody = document.getElementById("types-body");
-    typesBody.innerHTML = "";
-    (data.branchTypes || []).forEach((t) => {
-      const tr = el("tr", {}, [
-        el("td", { text: t.name }),
-        el("td", { text: t.prefix }),
-        el("td", { text: t.baseBranch }),
-        el("td", { text: t.mergeTargets.join(", ") + (t.autoTag ? " 🏷️" : "") }),
+    const health = document.getElementById("health");
+    health.innerHTML = "";
+    (data.health || []).forEach((h) => {
+      const row = el("div", { class: "health-row" }, [
+        el("span", { class: "pill " + h.level, text: h.level }),
+        el("span", { text: " " + h.message }),
       ]);
-      typesBody.appendChild(tr);
+      health.appendChild(row);
     });
 
-    const tree = document.getElementById("tree");
-    tree.innerHTML = "";
-    if (data.tree) tree.appendChild(renderTreeNode(data.tree));
+    const baseBody = document.getElementById("base-body");
+    baseBody.innerHTML = "";
+    (data.baseBranches || []).forEach((b) => {
+      const marks = [];
+      if (!b.exists) marks.push("missing");
+      if (b.ahead > 0) marks.push("↑" + b.ahead);
+      if (b.behind > 0) marks.push("↓" + b.behind);
+      const tr = el("tr", {}, [
+        el("td", { text: b.name, class: b.current ? "current" : "" }),
+        el("td", { text: b.base || "—" }),
+        el("td", { text: marks.join(", ") || "ok" }),
+      ]);
+      baseBody.appendChild(tr);
+    });
+
+    const types = document.getElementById("types");
+    types.innerHTML = "";
+    (data.branchTypes || []).forEach((t) => {
+      const section = el("div", {}, [
+        el("div", { text: t.name + " (" + t.prefix + " → " + (t.target.join(", ") || "none") + ")" }),
+      ]);
+      const list = el("ul", { class: "branches" });
+      if (t.branches.length === 0) {
+        list.appendChild(el("li", { text: "(none)" }));
+      } else {
+        t.branches.forEach((name) => {
+          const finishBtn = el("button", { text: "Finish" });
+          finishBtn.addEventListener("click", () => vscode.postMessage({ type: "finish", branch: name }));
+          list.appendChild(el("li", { class: "branch-row" }, [el("span", { text: name }), finishBtn]));
+        });
+      }
+      section.appendChild(list);
+      types.appendChild(section);
+    });
   }
 
   document.getElementById("start").addEventListener("click", () => vscode.postMessage({ type: "start" }));

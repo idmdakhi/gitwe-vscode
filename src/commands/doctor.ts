@@ -1,36 +1,34 @@
 import * as vscode from "vscode";
-import { getContainer, pickWorkspaceFolder } from "../gitweClient";
+import { getEngine, pickWorkspaceFolder } from "../gitweClient";
 import { requireWorkspaceFolder, showGitweError } from "../util/errors";
 
 export async function runDoctorCommand(outputChannel: vscode.OutputChannel): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
-  const container = getContainer(folder, outputChannel);
   try {
+    const engine = await getEngine(folder, outputChannel);
     const report = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "Gitwe: running doctor…" },
-      () => container.doctorHandler.handle(),
+      () => engine.overview(),
     );
 
     outputChannel.appendLine("─── Gitwe doctor ───");
-    for (const check of report.checks) {
-      const icon = check.passed ? "✅" : "❌";
-      const detail = check.detail ? ` — ${check.detail}` : "";
-      outputChannel.appendLine(`${icon} ${check.name}${detail}`);
+    for (const check of report.health) {
+      const icon = check.level === "ok" ? "✅" : check.level === "warning" ? "⚠️" : "❌";
+      outputChannel.appendLine(`${icon} ${check.message}`);
     }
     outputChannel.show(true);
 
-    if (report.healthy) {
+    const failed = report.health.filter((c) => c.level !== "ok");
+    if (failed.length === 0) {
       void vscode.window.showInformationMessage("Gitwe: all checks passed.");
     } else {
-      const failed = report.checks.filter((c) => !c.passed);
-      void vscode.window.showWarningMessage(
-        `Gitwe: ${failed.length} check(s) failed. See output for details.`,
-        "Show Output",
-      ).then((choice) => {
-        if (choice === "Show Output") outputChannel.show(true);
-      });
+      void vscode.window
+        .showWarningMessage(`Gitwe: ${failed.length} issue(s) found. See output for details.`, "Show Output")
+        .then((choice) => {
+          if (choice === "Show Output") outputChannel.show(true);
+        });
     }
   } catch (error) {
     await showGitweError(error, outputChannel);

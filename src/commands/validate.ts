@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { WorkflowConfigLoader } from "gitwe";
+import { loadGitwe } from "../gitweModule";
 import { pickWorkspaceFolder } from "../gitweClient";
 import { requireWorkspaceFolder } from "../util/errors";
 
@@ -16,7 +16,9 @@ export async function validateWorkflowCommand(outputChannel: vscode.OutputChanne
   if (!files || files.length === 0) return;
 
   try {
-    const workflow = new WorkflowConfigLoader().load(files[0].fsPath);
+    const gitwe = await loadGitwe();
+    const config = gitwe.readConfigFile(files[0].fsPath);
+    const workflow = gitwe.parseWorkflowConfig(config);
     outputChannel.appendLine(`─── Gitwe validate: ${files[0].fsPath} ───`);
     outputChannel.appendLine(`✅ Valid — "${workflow.name}" (${workflow.branchTypes.length} branch type(s))`);
     outputChannel.show(true);

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getContainer, pickWorkspaceFolder } from "./gitweClient";
+import { getEngine, pickWorkspaceFolder } from "./gitweClient";
 import { showGitweError } from "./util/errors";
 
 export class BranchTypeItem extends vscode.TreeItem {
@@ -10,11 +10,13 @@ export class BranchTypeItem extends vscode.TreeItem {
     public readonly mergeTargets: readonly string[],
   ) {
     super(typeName, vscode.TreeItemCollapsibleState.Expanded);
-    this.description = `${prefix} → ${mergeTargets.join(", ")}`;
+    this.description = `${prefix} → ${mergeTargets.join(", ") || "(none)"}`;
     this.iconPath = new vscode.ThemeIcon("folder");
     this.contextValue = "gitweBranchType";
     this.tooltip = new vscode.MarkdownString(
-      `**${typeName}**\n\nPrefix: \`${prefix}\`\n\nBase branch: \`${baseBranch}\`\n\nMerges into: ${mergeTargets.map((t) => `\`${t}\``).join(", ")}`,
+      `**${typeName}**\n\nPrefix: \`${prefix}\`\n\nBase branch: \`${baseBranch}\`\n\nMerges into: ${
+        mergeTargets.map((t) => `\`${t}\``).join(", ") || "(none)"
+      }`,
     );
   }
 }
@@ -60,19 +62,18 @@ export class GitweBranchesProvider implements vscode.TreeDataProvider<GitweTreeI
     if (!folder) return [new MessageItem("Open a folder with a git repository.")];
 
     try {
-      const container = getContainer(folder, this.outputChannel);
+      const engine = await getEngine(folder, this.outputChannel);
 
       if (!element) {
-        return container.workflow.branchTypes.map(
-          (rule) => new BranchTypeItem(rule.name, rule.prefix, rule.baseBranch, rule.mergeTargets),
+        return engine.workflow.branchTypes.map(
+          (type) => new BranchTypeItem(type.name, type.prefix, type.base, type.target),
         );
       }
 
       if (element instanceof BranchTypeItem) {
-        const branches = await container.listBranchesHandler.handle();
-        const matching = branches.filter((b) => b.name.startsWith(element.prefix));
-        return matching.length > 0
-          ? matching.map((b) => new BranchItem(b.name, b.isCurrent))
+        const statuses = await engine.listBranchTypes(engine.workflow.requireBranchType(element.typeName));
+        return statuses.length > 0
+          ? statuses.map((b) => new BranchItem(b.name, b.current))
           : [new MessageItem("No branches of this type yet.")];
       }
 

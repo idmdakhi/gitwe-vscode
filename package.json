@@ -7,50 +7,122 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Git-Workflow-Engine/gitwe-vscode-extension.git"
+    "url": "https://github.com/idmdakhi/gitwe-vscode-extension.git"
   },
   "bugs": {
-    "url": "https://github.com/Git-Workflow-Engine/gitwe-vscode-extension/issues"
+    "url": "https://github.com/idmdakhi/gitwe-vscode-extension/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["SCM Providers", "Other"],
-  "keywords": ["git", "git-flow", "github-flow", "trunk-based", "workflow", "branching"],
-  "activationEvents": ["workspaceContains:.git"],
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "git-flow",
+    "github-flow",
+    "trunk-based",
+    "workflow",
+    "branching"
+  ],
+  "activationEvents": [
+    "workspaceContains:.git"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      { "command": "gitwe.start", "title": "Gitwe: Start Branch...", "icon": "$(git-branch-create)" },
-      { "command": "gitwe.finish", "title": "Gitwe: Finish Branch..." },
-      { "command": "gitwe.status", "title": "Gitwe: Show Status" },
-      { "command": "gitwe.graph", "title": "Gitwe: Show Branch Graph" },
-      { "command": "gitwe.doctor", "title": "Gitwe: Run Doctor" },
-      { "command": "gitwe.validate", "title": "Gitwe: Validate Workflow Config..." },
-      { "command": "gitwe.showTypes", "title": "Gitwe: Show Branch Types" },
-      { "command": "gitwe.openConfig", "title": "Gitwe: Open Workflow Config File" },
-      { "command": "gitwe.openDashboard", "title": "Gitwe: Open Dashboard", "icon": "$(dashboard)" },
-      { "command": "gitwe.refresh", "title": "Gitwe: Refresh", "icon": "$(refresh)" },
-      { "command": "gitwe.checkoutBranch", "title": "Gitwe: Checkout Branch" },
-      { "command": "gitwe.deleteBranch", "title": "Gitwe: Delete Branch..." },
-      { "command": "gitwe.pull", "title": "Gitwe: Pull" },
-      { "command": "gitwe.push", "title": "Gitwe: Push" },
-      { "command": "gitwe.commitInfo", "title": "Gitwe: Show Commit Info..." },
-      { "command": "gitwe.currentBranch", "title": "Gitwe: Show Current Branch" }
+      {
+        "command": "gitwe.start",
+        "title": "Gitwe: Start Branch...",
+        "icon": "$(git-branch-create)"
+      },
+      {
+        "command": "gitwe.finish",
+        "title": "Gitwe: Finish Branch..."
+      },
+      {
+        "command": "gitwe.status",
+        "title": "Gitwe: Show Status"
+      },
+      {
+        "command": "gitwe.graph",
+        "title": "Gitwe: Show Branch Graph"
+      },
+      {
+        "command": "gitwe.doctor",
+        "title": "Gitwe: Run Doctor"
+      },
+      {
+        "command": "gitwe.validate",
+        "title": "Gitwe: Validate Workflow Config..."
+      },
+      {
+        "command": "gitwe.showTypes",
+        "title": "Gitwe: Show Branch Types"
+      },
+      {
+        "command": "gitwe.openConfig",
+        "title": "Gitwe: Open Workflow Config File"
+      },
+      {
+        "command": "gitwe.openDashboard",
+        "title": "Gitwe: Open Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "gitwe.refresh",
+        "title": "Gitwe: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "gitwe.checkoutBranch",
+        "title": "Gitwe: Checkout Branch"
+      },
+      {
+        "command": "gitwe.deleteBranch",
+        "title": "Gitwe: Delete Branch..."
+      },
+      {
+        "command": "gitwe.pull",
+        "title": "Gitwe: Pull"
+      },
+      {
+        "command": "gitwe.push",
+        "title": "Gitwe: Push"
+      },
+      {
+        "command": "gitwe.commitInfo",
+        "title": "Gitwe: Show Commit Info..."
+      },
+      {
+        "command": "gitwe.currentBranch",
+        "title": "Gitwe: Show Current Branch"
+      }
     ],
     "configuration": {
       "title": "Gitwe",
       "properties": {
         "gitwe.workflow": {
           "type": "string",
-          "enum": ["git-flow", "github-flow", "trunk-based"],
-          "default": "git-flow",
-          "description": "Built-in workflow to use. Ignored if gitwe.configPath is set."
+          "enum": [
+            "classic",
+            "github",
+            "gitlab"
+          ],
+          "enumDescriptions": [
+            "git-flow style: main/develop, feature/release/hotfix branches",
+            "GitHub Flow: single main branch, short-lived feature branches",
+            "GitLab Flow: main with environment branches"
+          ],
+          "default": "classic",
+          "description": "Built-in gitwe preset to use when the repository has no workflow file yet (run \"gitwe init\" to write one). Ignored once a gitwe.json/.gitwe/gitwe.yaml is found, or if gitwe.configPath is set."
         },
         "gitwe.configPath": {
           "type": "string",
           "default": "",
-          "description": "Path (relative to the workspace folder) to a custom JSON/YAML workflow config. Overrides gitwe.workflow."
+          "description": "Path (relative to the workspace folder) to a custom JSON/YAML workflow config. Overrides auto-discovery and gitwe.workflow."
         },
         "gitwe.defaultRootBranch": {
           "type": "string",
@@ -76,27 +148,60 @@
     },
     "viewsContainers": {
       "activitybar": [
-        { "id": "gitwe", "title": "Gitwe", "icon": "media/activitybar-icon.svg" }
+        {
+          "id": "gitwe",
+          "title": "Gitwe",
+          "icon": "media/activitybar-icon.svg"
+        }
       ]
     },
     "views": {
       "gitwe": [
-        { "id": "gitweBranches", "name": "Branches", "icon": "media/activitybar-icon.svg" }
+        {
+          "id": "gitweBranches",
+          "name": "Branches",
+          "icon": "media/activitybar-icon.svg"
+        }
       ]
     },
     "menus": {
       "view/title": [
-        { "command": "gitwe.refresh", "when": "view == gitweBranches", "group": "navigation@1" },
-        { "command": "gitwe.start", "when": "view == gitweBranches", "group": "navigation@2" },
-        { "command": "gitwe.openDashboard", "when": "view == gitweBranches", "group": "navigation@3" }
+        {
+          "command": "gitwe.refresh",
+          "when": "view == gitweBranches",
+          "group": "navigation@1"
+        },
+        {
+          "command": "gitwe.start",
+          "when": "view == gitweBranches",
+          "group": "navigation@2"
+        },
+        {
+          "command": "gitwe.openDashboard",
+          "when": "view == gitweBranches",
+          "group": "navigation@3"
+        }
       ],
       "view/item/context": [
-        { "command": "gitwe.checkoutBranch", "when": "view == gitweBranches && viewItem == gitweBranch", "group": "inline" },
-        { "command": "gitwe.finish", "when": "view == gitweBranches && viewItem == gitweBranch" },
-        { "command": "gitwe.deleteBranch", "when": "view == gitweBranches && viewItem == gitweBranch" }
+        {
+          "command": "gitwe.checkoutBranch",
+          "when": "view == gitweBranches && viewItem == gitweBranch",
+          "group": "inline"
+        },
+        {
+          "command": "gitwe.finish",
+          "when": "view == gitweBranches && viewItem == gitweBranch"
+        },
+        {
+          "command": "gitwe.deleteBranch",
+          "when": "view == gitweBranches && viewItem == gitweBranch"
+        }
       ],
       "commandPalette": [
-        { "command": "gitwe.checkoutBranch", "when": "false" }
+        {
+          "command": "gitwe.checkoutBranch",
+          "when": "false"
+        }
       ]
     }
   },
@@ -109,14 +214,14 @@
     "package": "vsce package"
   },
   "dependencies": {
-    "gitwe": "^2.0.0"
+    "gitwe": "git+https://github.com/idmdakhi/gitwe.git"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
-    "@vscode/vsce": "^2.29.0",
+    "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.21.0",
     "eslint": "^8.57.0",
     "typescript": "^5.5.0"

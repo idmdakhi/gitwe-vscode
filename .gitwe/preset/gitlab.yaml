@@ -1,0 +1,72 @@
+version: 1
+name: gitlab
+
+baseBranches:
+  - name: main
+    protected: true
+  - name: staging
+    aliases:
+      - stage
+      - preprod
+    base: main
+    protected: true
+  - name: production
+    aliases:
+      - prod
+      - live
+    base: staging
+    protected: true
+
+branchTypes:
+  - name: feature
+    aliases:
+      - feat
+    base: main
+    target: staging
+    prefix: feature/
+  - name: hotfix
+    aliases:
+      - hot
+      - hfix
+    base: production
+    target:
+      - production
+      - staging
+    prefix: hotfix/
+
+cli:
+  enabled: true
+  interactive: true
+  color: true
+  aliases:
+    fs: finish feature
+    hf: hotfix start
+
+merge:
+  strategy: merge
+  branchTypes: {}
+  deleteOnFinish:
+    - feature
+    - hotfix
+  squash:
+    branchTypes:
+      - feature
+    enabled: true
+    default: false
+
+hooks:
+  enabled: true
+  path: .gitwe/hooks
+
+versioning:
+  enabled: false
+  path: .gitwe/VERSION.yaml
+
+changelog:
+  enabled: false
+  path: .gitwe/CHANGELOG.yaml
+
+remote:
+  name: origin
+  autoPush: false
+  autoFetch: true

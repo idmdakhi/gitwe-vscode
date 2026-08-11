@@ -1,0 +1,59 @@
+version: 1
+name: github
+
+baseBranches:
+  - name: main
+    aliases:
+      - master
+    protected: true
+
+branchTypes:
+  - name: feature
+    aliases:
+      - feat
+    base: main
+    target: main
+    prefix: feature/
+  - name: bugfix
+    aliases:
+      - fix
+      - bug
+    base: main
+    target: main
+    prefix: bugfix/
+
+cli:
+  enabled: true
+  interactive: true
+  color: true
+  aliases:
+    fs: finish feature
+
+merge:
+  strategy: merge
+  branchTypes: {}
+  deleteOnFinish:
+    - feature
+    - bugfix
+  squash:
+    branchTypes:
+      - feature
+    enabled: true
+    default: false
+
+hooks:
+  enabled: true
+  path: .gitwe/hooks
+
+versioning:
+  enabled: false
+  path: .gitwe/VERSION.yaml
+
+changelog:
+  enabled: false
+  path: .gitwe/CHANGELOG.yaml
+
+remote:
+  name: origin
+  autoPush: false
+  autoFetch: true

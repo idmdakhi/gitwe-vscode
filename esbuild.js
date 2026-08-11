@@ -11,7 +11,12 @@ async function main() {
     platform: "node",
     target: "node18",
     outfile: "dist/extension.js",
-    external: ["vscode"],
+    // "gitwe" is kept external (not inlined) because it locates its built-in
+    // preset YAML files (.gitwe/preset/*.yaml) at runtime relative to its own
+    // package directory. Bundling it in would break that path resolution, so
+    // it — and its own runtime dependencies — ship inside node_modules in the
+    // packaged .vsix instead (see .vscodeignore).
+    external: ["vscode", "gitwe"],
     sourcemap: !production,
     minify: production,
     logLevel: "info",

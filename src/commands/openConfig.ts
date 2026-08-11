@@ -1,22 +1,23 @@
 import * as vscode from "vscode";
-import * as path from "node:path";
-import { getSettings, pickWorkspaceFolder } from "../gitweClient";
-import { requireWorkspaceFolder } from "../util/errors";
+import { getEngine, getSettings, pickWorkspaceFolder } from "../gitweClient";
+import { requireWorkspaceFolder, showGitweError } from "../util/errors";
 
-export async function openConfigCommand(): Promise<void> {
+export async function openConfigCommand(outputChannel: vscode.OutputChannel): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
-  const settings = getSettings();
-  if (!settings.configPath) {
-    void vscode.window.showInformationMessage(
-      `Gitwe: no custom config set — using the built-in "${settings.workflow}" workflow. ` +
-        `Set "gitwe.configPath" in settings to open a custom one.`,
-    );
-    return;
+  try {
+    const engine = await getEngine(folder, outputChannel);
+    if (!engine.configPath) {
+      void vscode.window.showInformationMessage(
+        `Gitwe: no workflow file found — using the built-in "${getSettings().workflow}" preset in memory. ` +
+          `Run "gitwe init" to write one, or set "gitwe.configPath" to point at a custom file.`,
+      );
+      return;
+    }
+    const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(engine.configPath));
+    await vscode.window.showTextDocument(doc);
+  } catch (error) {
+    await showGitweError(error, outputChannel);
   }
-
-  const fullPath = path.resolve(folder.uri.fsPath, settings.configPath);
-  const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(fullPath));
-  await vscode.window.showTextDocument(doc);
 }

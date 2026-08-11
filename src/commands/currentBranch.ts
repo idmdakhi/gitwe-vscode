@@ -1,14 +1,16 @@
 import * as vscode from "vscode";
-import { getContainer, pickWorkspaceFolder } from "../gitweClient";
+import { getEngine, pickWorkspaceFolder } from "../gitweClient";
 import { requireWorkspaceFolder, showGitweError } from "../util/errors";
 
 export async function showCurrentBranchCommand(outputChannel: vscode.OutputChannel): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
-  const container = getContainer(folder, outputChannel);
   try {
-    const branch = await container.git.getCurrentBranch();
-    void vscode.window.showInformationMessage(`Gitwe: current branch is ${branch}.`);
+    const engine = await getEngine(folder, outputChannel);
+    const branch = await engine.git.currentBranch();
+    void vscode.window.showInformationMessage(
+      branch ? `Gitwe: current branch is ${branch}.` : "Gitwe: HEAD is detached.",
+    );
   } catch (error) {
     await showGitweError(error, outputChannel);
   }

@@ -63,7 +63,7 @@ export function activate(context: vscode.ExtensionContext): void {
   register("gitwe.doctor", () => runDoctorCommand(outputChannel));
   register("gitwe.validate", () => validateWorkflowCommand(outputChannel));
   register("gitwe.showTypes", () => showTypesCommand(outputChannel));
-  register("gitwe.openConfig", () => openConfigCommand());
+  register("gitwe.openConfig", () => openConfigCommand(outputChannel));
   register("gitwe.openDashboard", () => GitwePanel.show(context, outputChannel));
   register("gitwe.refresh", refreshAll);
   register("gitwe.checkoutBranch", (branch?: string) => checkoutBranchCommand(outputChannel, refreshAll, branch));

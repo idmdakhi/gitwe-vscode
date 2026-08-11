@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getContainer, pickWorkspaceFolder } from "./gitweClient";
+import { getEngine, pickWorkspaceFolder } from "./gitweClient";
 
 export class GitweStatusBar {
   private readonly item: vscode.StatusBarItem;
@@ -27,16 +27,13 @@ export class GitweStatusBar {
     }
 
     try {
-      const container = getContainer(folder, this.outputChannel);
-      const [branch, clean] = await Promise.all([
-        container.git.getCurrentBranch(),
-        container.git.isWorkingTreeClean(),
-      ]);
+      const engine = await getEngine(folder, this.outputChannel);
+      const [branch, clean] = await Promise.all([engine.git.currentBranch(), engine.git.isClean()]);
       const dirtyMarker = clean ? "" : " $(circle-filled)";
-      this.item.text = `$(git-branch) ${branch}${dirtyMarker}`;
+      this.item.text = `$(git-branch) ${branch ?? "detached"}${dirtyMarker}`;
       this.item.tooltip = new vscode.MarkdownString(
-        `**Gitwe** — workflow: \`${container.workflow.name}\`\n\n` +
-          `Current branch: \`${branch}\`\n\n` +
+        `**Gitwe** — workflow: \`${engine.workflow.config.name}\`\n\n` +
+          `Current branch: \`${branch ?? "(detached HEAD)"}\`\n\n` +
           `Working tree: ${clean ? "clean" : "has uncommitted changes"}\n\n` +
           `Click to open the dashboard.`,
       );
