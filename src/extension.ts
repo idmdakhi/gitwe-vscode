@@ -57,6 +57,23 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBar);
   statusBar.show();
 
+  const already = context.globalState.get<boolean>("gitwe.welcomed");
+  if (!already) {
+    void vscode.window
+      .showInformationMessage(
+        "Gitwe is ready. Press Shift+Alt+G for the workflow menu.",
+        "Open Menu",
+        "Don't show again",
+      )
+      .then((c) => {
+        if (c === "Open Menu")
+          void vscode.commands.executeCommand("gitwe.menu");
+        if (c === "Don't show again" || c === "Open Menu") {
+          void context.globalState.update("gitwe.welcomed", true);
+        }
+      });
+  }
+
   const refreshAll = (): void => {
     branchesProvider.refresh();
     tagsProvider.refresh();

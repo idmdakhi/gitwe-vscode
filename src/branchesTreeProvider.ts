@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { getEngine, pickWorkspaceFolder } from "./gitweClient";
 import { showGitweError } from "./util/errors";
 import { branchContextValue, capabilitiesForType } from "./util/capabilities";
+import { iconForBranchType } from "./util/branchIcons";
 
 export class BranchTypeItem extends vscode.TreeItem {
   constructor(
@@ -12,7 +13,7 @@ export class BranchTypeItem extends vscode.TreeItem {
   ) {
     super(typeName, vscode.TreeItemCollapsibleState.Expanded);
     this.description = `${prefix} → ${mergeTargets.join(", ") || "(none)"}`;
-    this.iconPath = new vscode.ThemeIcon("folder");
+    this.iconPath = iconForBranchType(typeName);
     this.contextValue = "gitweBranchType";
     this.tooltip = new vscode.MarkdownString(
       `**${typeName}**\n\nPrefix: \`${prefix}\`\n\nBase branch: \`${baseBranch}\`\n\nMerges into: ${
@@ -56,6 +57,20 @@ export class BranchItem extends vscode.TreeItem {
     const caps = capabilitiesForType(typeName ?? "feature", hasTargets);
     this.contextValue = branchContextValue(caps, isRemote);
     this.description = isCurrent ? "current" : isRemote ? "remote" : undefined;
+
+    // description
+    if (isCurrent) {
+      this.description = "● current";
+    } else if (isRemote) {
+      this.description = "origin";
+    }
+
+    // tooltip
+    this.tooltip = new vscode.MarkdownString(
+      isRemote
+        ? `**Remote** \`${branchName}\`\n\nTrack to create a local branch.`
+        : `**${branchName}**${isCurrent ? " _(current)_" : ""}\n\nClick to check out · right-click for actions.`,
+    );
 
     if (!isRemote) {
       this.command = {
@@ -106,10 +121,15 @@ export class GitweBranchesProvider implements vscode.TreeDataProvider<GitweTreeI
 
       // Root: branch types
       if (!element) {
-        return engine.workflow.branchTypes.map(
+        const types = engine.workflow.branchTypes.map(
           (type) =>
             new BranchTypeItem(type.name, type.prefix, type.base, type.target),
         );
+        if (!engine.configPath) {
+          // in-memory preset — subtle hint as first row optional
+          // یا فقط در status bar / dashboard نشان دهید
+        }
+        return types;
       }
 
       // Under a branch type → Local + Remote groups
@@ -131,7 +151,7 @@ export class GitweBranchesProvider implements vscode.TreeDataProvider<GitweTreeI
               (b) =>
                 new BranchItem(b.name, b.current, false, type.name, hasTargets),
             )
-          : [new MessageItem("No local branches of this type.")];
+          : [new MessageItem("No branches yet — Start from title bar or menu")];
       }
 
       // Under Remote group → remote branches matching prefix
@@ -156,7 +176,7 @@ export class GitweBranchesProvider implements vscode.TreeDataProvider<GitweTreeI
               (name) =>
                 new BranchItem(name, false, true, element.typeName, true),
             )
-          : [new MessageItem("No remote-only branches.")];
+          : [new MessageItem("No remote-only branches")];
       }
 
       return [];

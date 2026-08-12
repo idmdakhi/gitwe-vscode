@@ -5,7 +5,10 @@ export class GitweStatusBar {
   private readonly item: vscode.StatusBarItem;
 
   constructor(private readonly outputChannel: vscode.OutputChannel) {
-    this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    this.item = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left,
+      100,
+    );
     this.item.command = "gitwe.menu";
     this.item.name = "Gitwe";
   }
@@ -28,19 +31,42 @@ export class GitweStatusBar {
 
     try {
       const engine = await getEngine(folder, this.outputChannel);
-      const [branch, clean] = await Promise.all([engine.git.currentBranch(), engine.git.isClean()]);
-      const dirtyMarker = clean ? "" : " $(circle-filled)";
-      this.item.text = `$(git-branch) ${branch ?? "detached"}${dirtyMarker}`;
+      const [branch, clean] = await Promise.all([
+        engine.git.currentBranch(),
+        engine.git.isClean(),
+      ]);
+
+      const workflow = engine.workflow.config.name;
+      const short = branch ?? "detached";
+
+      // Resolve type for a subtle hint
+      let typeHint = "";
+      if (branch) {
+        const resolved = engine.workflow.resolveBranch(branch);
+        if (resolved) typeHint = resolved.type.name;
+      }
+
+      const dirty = clean ? "" : " •";
+      this.item.text = `$(git-branch) ${short}${dirty}`;
+      this.item.backgroundColor = clean
+        ? undefined
+        : new vscode.ThemeColor("statusBarItem.warningBackground");
+
       this.item.tooltip = new vscode.MarkdownString(
-        `**Gitwe** — workflow: \`${engine.workflow.config.name}\`\n\n` +
-          `Current branch: \`${branch ?? "(detached HEAD)"}\`\n\n` +
-          `Working tree: ${clean ? "clean" : "has uncommitted changes"}\n\n` +
-          `Click to open the Gitwe menu.`,
+        [
+          `**Gitwe** \`${workflow}\``,
+          ``,
+          `Branch: \`${short}\`${typeHint ? ` _( ${typeHint} )_` : ""}`,
+          `Working tree: ${clean ? "clean" : "**uncommitted changes**"}`,
+          ``,
+          `_Click to open Gitwe menu_ · \`Shift+Alt+G\``,
+        ].join("\n"),
       );
       this.item.show();
     } catch {
-      this.item.text = "$(git-branch) gitwe: not a repo";
-      this.item.tooltip = "Open a folder with a git repository to use Gitwe.";
+      this.item.text = "$(git-branch) Gitwe";
+      this.item.backgroundColor = undefined;
+      this.item.tooltip = "Open a git repository to use Gitwe.";
       this.item.show();
     }
   }

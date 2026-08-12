@@ -40,7 +40,8 @@
       },
       {
         "command": "gitwe.finish",
-        "title": "Gitwe: Finish Branch..."
+        "title": "Gitwe: Finish Branch...",
+        "icon": "$(check)"
       },
       {
         "command": "gitwe.status",
@@ -102,11 +103,13 @@
       },
       {
         "command": "gitwe.publish",
-        "title": "Gitwe: Publish Branch..."
+        "title": "Gitwe: Publish Branch...",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "gitwe.track",
-        "title": "Gitwe: Track Remote Branch..."
+        "title": "Gitwe: Track Remote Branch...",
+        "icon": "$(cloud-download)"
       },
       {
         "command": "gitwe.update",
@@ -122,7 +125,8 @@
       },
       {
         "command": "gitwe.menu",
-        "title": "Gitwe: Menu..."
+        "title": "Gitwe: Menu...",
+        "icon": "$(menu)"
       },
       {
         "command": "gitwe.branchTypeMenu",

@@ -201,65 +201,228 @@ export class GitwePanel {
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
 <style>
-  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); padding: 0 16px 16px; }
-  h1 { font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
-  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.75em; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
-  .clean { background: #2ea04326; color: #2ea043; }
-  .dirty { background: #d2992226; color: #d29922; }
-  .ok { background: #2ea04326; color: #2ea043; }
-  .warning { background: #d2992226; color: #d29922; }
-  .error { background: #f8514926; color: #f85149; }
-  section { margin: 18px 0; }
-  h2 { font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.75; margin-bottom: 6px; }
-  table { border-collapse: collapse; width: 100%; }
-  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--vscode-widget-border, #444); font-size: 0.9em; }
-  button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 6px 12px; border-radius: 2px; cursor: pointer; margin-right: 8px; }
+  :root {
+    --gap: 12px;
+    --radius: 6px;
+    --border: var(--vscode-widget-border, rgba(127,127,127,.35));
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-foreground);
+    padding: 16px 20px 24px;
+    margin: 0;
+    line-height: 1.45;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  h1 {
+    font-size: 1.15em;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.72em;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+  }
+  .pill.clean { background: color-mix(in srgb, #2ea043 22%, transparent); color: #3fb950; }
+  .pill.dirty { background: color-mix(in srgb, #d29922 22%, transparent); color: #d29922; }
+  .pill.ok { background: color-mix(in srgb, #2ea043 22%, transparent); color: #3fb950; }
+  .pill.warning { background: color-mix(in srgb, #d29922 22%, transparent); color: #d29922; }
+  .pill.error { background: color-mix(in srgb, #f85149 22%, transparent); color: #f85149; }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  button {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+  }
   button:hover { background: var(--vscode-button-hoverBackground); }
-  button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-  ul.branches { list-style: none; margin: 4px 0 0; padding-left: 18px; }
-  li.branch-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
-  li.branch-row button { padding: 2px 8px; font-size: 0.8em; margin: 0; }
-  .current { font-weight: 600; color: var(--vscode-textLink-foreground); }
-  .error-box { color: var(--vscode-errorForeground); }
-  .toolbar { display: flex; gap: 8px; margin-bottom: 14px; }
-  .health-row { padding: 2px 0; }
+  button.secondary {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+  }
+  button.secondary:hover {
+    filter: brightness(1.08);
+  }
+  button.ghost {
+    background: transparent;
+    color: var(--vscode-textLink-foreground);
+    padding: 4px 8px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    background: var(--vscode-editor-background);
+  }
+  .card h2 {
+    margin: 0 0 10px;
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.7;
+    font-weight: 600;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .branch-name {
+    font-size: 1.05em;
+    font-weight: 600;
+    font-family: var(--vscode-editor-font-family, monospace);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { opacity: 0.65; font-weight: 500; font-size: 0.85em; }
+  tr.current td:first-child { color: var(--vscode-textLink-foreground); font-weight: 600; }
+
+  .type-block { margin-bottom: 14px; }
+  .type-title {
+    font-size: 0.9em;
+    margin-bottom: 6px;
+    opacity: 0.9;
+  }
+  .type-title code {
+    font-size: 0.85em;
+    opacity: 0.7;
+  }
+  ul.branches {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li.branch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+  }
+  li.branch-row:hover {
+    background: var(--vscode-list-hoverBackground);
+  }
+  li.branch-row .name {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.9em;
+  }
+  li.branch-row .actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  li.branch-row button {
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+  .empty {
+    opacity: 0.55;
+    font-size: 0.9em;
+    padding: 4px 0;
+  }
+  .error-box {
+    color: var(--vscode-errorForeground);
+    border: 1px solid color-mix(in srgb, var(--vscode-errorForeground) 40%, transparent);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+  .health-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.9em;
+  }
 </style>
 </head>
 <body>
-  <h1>🌿 Gitwe Dashboard <span id="workflow-pill" class="pill"></span></h1>
+  <header>
+    <h1>
+      <span>Gitwe</span>
+      <span id="workflow-pill" class="pill"></span>
+    </h1>
+  </header>
+
   <div id="error" class="error-box" style="display:none"></div>
 
   <div class="toolbar">
     <button id="start">Start Branch</button>
+    <button id="track" class="secondary">Track Remote</button>
     <button id="pull" class="secondary">Pull</button>
     <button id="push" class="secondary">Push</button>
-    <button id="doctor" class="secondary">Run Doctor</button>
-    <button id="refresh" class="secondary">Refresh</button>
-    <button id="track" class="secondary">Track Remote</button>
+    <button id="doctor" class="secondary">Doctor</button>
+    <button id="refresh" class="ghost">Refresh</button>
   </div>
 
-  <section>
-    <h2>Status</h2>
-    <div id="status"></div>
-  </section>
+  <div class="grid">
+    <section class="card">
+      <h2>Status</h2>
+      <div id="status" class="status-row"></div>
+    </section>
+    <section class="card">
+      <h2>Health</h2>
+      <div id="health"></div>
+    </section>
+  </div>
 
-  <section>
-    <h2>Health</h2>
-    <div id="health"></div>
-  </section>
-
-  <section>
+  <section class="card" style="margin-top:16px">
     <h2>Base Branches</h2>
-    <table id="base-table">
-      <thead><tr><th>Name</th><th>Parent</th><th>Status</th></tr></thead>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Parent</th><th>Status</th></tr>
+      </thead>
       <tbody id="base-body"></tbody>
     </table>
   </section>
 
-  <section>
-    <h2>Branch Types</h2>
+  <section class="card" style="margin-top:16px">
+    <h2>Topic Branches</h2>
     <div id="types"></div>
   </section>
 
@@ -271,9 +434,10 @@ export class GitwePanel {
     Object.entries(props).forEach(([k, v]) => {
       if (k === "class") node.className = v;
       else if (k === "text") node.textContent = v;
+      else if (k === "style") node.setAttribute("style", v);
       else node.setAttribute(k, v);
     });
-    children.forEach((c) => node.appendChild(c));
+    (children || []).forEach((c) => node.appendChild(c));
     return node;
   }
 
@@ -286,29 +450,36 @@ export class GitwePanel {
       errorBox.style.display = "none";
     }
 
-    document.getElementById("workflow-pill").textContent = data.workflowName || "";
+    document.getElementById("workflow-pill").textContent = data.workflowName || "—";
 
     const status = document.getElementById("status");
     status.innerHTML = "";
     if (data.currentBranch) {
-      status.appendChild(el("div", { text: "Branch: " + data.currentBranch }));
+      status.appendChild(el("span", { class: "branch-name", text: data.currentBranch }));
       status.appendChild(
         el("span", {
           class: "pill " + (data.workingTreeClean ? "clean" : "dirty"),
-          text: data.workingTreeClean ? "clean" : "uncommitted changes",
+          text: data.workingTreeClean ? "clean" : "dirty",
         }),
       );
+    } else {
+      status.appendChild(el("span", { class: "empty", text: "No repository" }));
     }
 
     const health = document.getElementById("health");
     health.innerHTML = "";
-    (data.health || []).forEach((h) => {
-      const row = el("div", { class: "health-row" }, [
-        el("span", { class: "pill " + h.level, text: h.level }),
-        el("span", { text: " " + h.message }),
-      ]);
-      health.appendChild(row);
-    });
+    if (!data.health || data.health.length === 0) {
+      health.appendChild(el("div", { class: "empty", text: "No checks yet" }));
+    } else {
+      data.health.forEach((h) => {
+        health.appendChild(
+          el("div", { class: "health-row" }, [
+            el("span", { class: "pill " + h.level, text: h.level }),
+            el("span", { text: h.message }),
+          ]),
+        );
+      });
+    }
 
     const baseBody = document.getElementById("base-body");
     baseBody.innerHTML = "";
@@ -317,73 +488,81 @@ export class GitwePanel {
       if (!b.exists) marks.push("missing");
       if (b.ahead > 0) marks.push("↑" + b.ahead);
       if (b.behind > 0) marks.push("↓" + b.behind);
-      const tr = el("tr", {}, [
-        el("td", { text: b.name, class: b.current ? "current" : "" }),
+      const tr = el("tr", { class: b.current ? "current" : "" }, [
+        el("td", { text: b.name }),
         el("td", { text: b.base || "—" }),
-        el("td", { text: marks.join(", ") || "ok" }),
+        el("td", { text: marks.join(" · ") || "ok" }),
       ]);
       baseBody.appendChild(tr);
     });
 
     const types = document.getElementById("types");
     types.innerHTML = "";
-    (data.branchTypes || []).forEach((t) => {
-      const section = el("div", {}, [
-        el("div", { text: t.name + " (" + t.prefix + " → " + (t.target.join(", ") || "none") + ")" }),
-      ]);
+    if (!data.branchTypes || data.branchTypes.length === 0) {
+      types.appendChild(el("div", { class: "empty", text: "No branch types in workflow" }));
+      return;
+    }
+
+    data.branchTypes.forEach((t) => {
+      const block = el("div", { class: "type-block" });
+      block.appendChild(
+        el("div", {
+          class: "type-title",
+          text: t.name + "  ",
+        }),
+      );
+      // prefix line
+      const meta = el("div", {
+        class: "empty",
+        text: t.prefix + "* → " + (t.target.join(", ") || "none"),
+        style: "margin-bottom:6px",
+      });
+      block.appendChild(meta);
+
       const list = el("ul", { class: "branches" });
-      if (t.branches.length === 0) {
-        list.appendChild(el("li", { text: "(none)" }));
+      if (!t.branches.length) {
+        list.appendChild(el("li", { class: "empty", text: "No branches" }));
       } else {
         t.branches.forEach((name) => {
-          const finishBtn = el("button", { text: "Finish" });
-          finishBtn.addEventListener("click", () =>
-            vscode.postMessage({ type: "finish", branch: name }),
-          );
-
-          const publishBtn = el("button", { text: "Publish", class: "secondary" });
-          publishBtn.addEventListener("click", () =>
-            vscode.postMessage({ type: "publish", branch: name }),
-          );
-
-          const updateBtn = el("button", { text: "Update", class: "secondary" });
-          updateBtn.addEventListener("click", () =>
-            vscode.postMessage({ type: "update", branch: name }),
-          );
-
-          const rebaseBtn = el("button", { text: "Rebase", class: "secondary" });
-          rebaseBtn.addEventListener("click", () =>
-            vscode.postMessage({ type: "rebase", branch: name }),
-          );
-
-          const actions = el(
-            "span",
-            { style: "display:flex;gap:4px;flex-wrap:wrap;" },
-            [finishBtn, publishBtn, updateBtn, rebaseBtn],
-          );
+          const mk = (label, type, secondary) => {
+            const b = el("button", {
+              text: label,
+              class: secondary ? "secondary" : "",
+            });
+            b.addEventListener("click", () =>
+              vscode.postMessage({ type, branch: name }),
+            );
+            return b;
+          };
+          const actions = el("span", { class: "actions" }, [
+            mk("Finish", "finish", false),
+            mk("Publish", "publish", true),
+            mk("Update", "update", true),
+            mk("Rebase", "rebase", true),
+          ]);
           list.appendChild(
-            el("li", { class: "branch-row" }, [el("span", { text: name }), actions]),
+            el("li", { class: "branch-row" }, [
+              el("span", { class: "name", text: name }),
+              actions,
+            ]),
           );
         });
       }
-      section.appendChild(list);
-      types.appendChild(section);
+      block.appendChild(list);
+      types.appendChild(block);
     });
   }
 
-  document.getElementById("start").addEventListener("click", () => vscode.postMessage({ type: "start" }));
-  document.getElementById("pull").addEventListener("click", () => vscode.postMessage({ type: "pull" }));
-  document.getElementById("push").addEventListener("click", () => vscode.postMessage({ type: "push" }));
-  document.getElementById("doctor").addEventListener("click", () => vscode.postMessage({ type: "runDoctor" }));
-  document.getElementById("refresh").addEventListener("click", () => vscode.postMessage({ type: "refresh" }));
-  document.getElementById("track").addEventListener("click", () =>
-    vscode.postMessage({ type: "track" }),
-  );
-  window.addEventListener("message", (event) => {
-    const message = event.data;
-    if (message.type === "data") render(message.payload);
-  });
+  document.getElementById("start").onclick = () => vscode.postMessage({ type: "start" });
+  document.getElementById("track").onclick = () => vscode.postMessage({ type: "track" });
+  document.getElementById("pull").onclick = () => vscode.postMessage({ type: "pull" });
+  document.getElementById("push").onclick = () => vscode.postMessage({ type: "push" });
+  document.getElementById("doctor").onclick = () => vscode.postMessage({ type: "runDoctor" });
+  document.getElementById("refresh").onclick = () => vscode.postMessage({ type: "refresh" });
 
+  window.addEventListener("message", (e) => {
+    if (e.data?.type === "data") render(e.data.payload);
+  });
   vscode.postMessage({ type: "ready" });
 </script>
 </body>
