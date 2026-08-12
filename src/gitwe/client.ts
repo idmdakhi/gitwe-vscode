@@ -3,12 +3,6 @@ import {
   Container,
   Workflow,
   ShellGitRepository,
-  StartBranchHandler,
-  FinishBranchHandler,
-  GetStatusHandler,
-  ListBranchesHandler,
-  DoctorHandler,
-  ValidateWorkflowHandler,
   type StartBranchCommand,
   type FinishBranchCommand,
   type StatusReport,
@@ -16,7 +10,7 @@ import {
   type FinishBranchResult,
   type DoctorReport,
   type ValidateWorkflowResult,
-} from "gitwe";
+} from "gitwe-ts";
 import { getConfig } from "../config/settings";
 
 export class GitweClient {

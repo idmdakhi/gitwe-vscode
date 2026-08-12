@@ -16,7 +16,7 @@ async function main() {
     // package directory. Bundling it in would break that path resolution, so
     // it — and its own runtime dependencies — ship inside node_modules in the
     // packaged .vsix instead (see .vscodeignore).
-    external: ["vscode", "gitwe"],
+    external: ["vscode", "gitwe-ts"],
     sourcemap: !production,
     minify: production,
     logLevel: "info",

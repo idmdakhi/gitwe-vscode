@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
-import type { Logger } from "gitwe";
+import type { Logger } from "gitwe-ts";
 
 /** Routes gitwe's internal logging (git commands run, hook output, etc.) into a VS Code OutputChannel. */
-export function createOutputChannelLogger(channel: vscode.OutputChannel): Logger {
+export function createOutputChannelLogger(
+  channel: vscode.OutputChannel,
+): Logger {
   const write = (level: string, message: string): void => {
     channel.appendLine(`[${level}] ${message}`);
   };

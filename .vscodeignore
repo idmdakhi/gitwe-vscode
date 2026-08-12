@@ -3,7 +3,7 @@
 src/**
 out/**
 node_modules/**
-!node_modules/gitwe/**
+!node_modules/gitwe-ts/**
 !node_modules/js-yaml/**
 !node_modules/argparse/**
 .gitignore
@@ -11,5 +11,6 @@ node_modules/**
 esbuild.js
 tsconfig.json
 structure.md
+docs/**
 **/*.map
 **/.DS_Store

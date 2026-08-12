@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "node:path";
 import { existsSync } from "node:fs";
-import type { Engine, BranchType, BranchStatus } from "gitwe";
+import type { Engine, BranchType, BranchStatus } from "gitwe-ts";
 import { loadGitwe } from "./gitweModule";
 import { createOutputChannelLogger } from "./outputChannel";
 
@@ -87,7 +87,8 @@ export async function getEngine(
     configPath = loaded.path;
   } catch (error) {
     // An explicit configPath the user asked for should surface its own error.
-    if (settings.configPath || !(error instanceof gitwe.NotInitializedError)) throw error;
+    if (settings.configPath || !(error instanceof gitwe.NotInitializedError))
+      throw error;
     config = gitwe.createPreset(settings.workflow, {}, root);
   }
 
@@ -99,7 +100,9 @@ export interface TopicBranch extends BranchStatus {
 }
 
 /** Flattens every topic branch across all configured branch types. */
-export async function listTopicBranches(engine: Engine): Promise<TopicBranch[]> {
+export async function listTopicBranches(
+  engine: Engine,
+): Promise<TopicBranch[]> {
   const result: TopicBranch[] = [];
   for (const type of engine.workflow.branchTypes) {
     const statuses = await engine.listBranchTypes(type);
@@ -111,6 +114,9 @@ export async function listTopicBranches(engine: Engine): Promise<TopicBranch[]> 
 }
 
 /** Resolves a plain branch name (e.g. `feature/login`) back to its branch type, if any. */
-export function resolveBranchType(engine: Engine, branchName: string): BranchType | undefined {
+export function resolveBranchType(
+  engine: Engine,
+  branchName: string,
+): BranchType | undefined {
   return engine.workflow.resolveBranch(branchName)?.type;
 }

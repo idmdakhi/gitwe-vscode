@@ -5,11 +5,11 @@
  * throws ERR_REQUIRE_ESM. So every runtime (non type-only) use of "gitwe"
  * goes through this lazily-cached loader instead of a static import.
  */
-let modulePromise: Promise<typeof import("gitwe")> | undefined;
+let modulePromise: Promise<typeof import("gitwe-ts")> | undefined;
 
-export function loadGitwe(): Promise<typeof import("gitwe")> {
+export function loadGitwe(): Promise<typeof import("gitwe-ts")> {
   if (!modulePromise) {
-    modulePromise = import("gitwe");
+    modulePromise = import("gitwe-ts");
   }
   return modulePromise;
 }

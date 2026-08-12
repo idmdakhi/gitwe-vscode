@@ -1,6 +1,6 @@
 import { Express, Request, Response } from "express";
 import { GitweClient } from "../gitwe/client";
-import { DomainError } from "gitwe";
+import { DomainError } from "gitwe-ts";
 
 export function setupRoutes(app: Express, client: GitweClient) {
   // ---- وضعیت کلی ----

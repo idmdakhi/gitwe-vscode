@@ -6,7 +6,7 @@ export class GitweStatusBar {
 
   constructor(private readonly outputChannel: vscode.OutputChannel) {
     this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    this.item.command = "gitwe.openDashboard";
+    this.item.command = "gitwe.menu";
     this.item.name = "Gitwe";
   }
 
@@ -35,7 +35,7 @@ export class GitweStatusBar {
         `**Gitwe** — workflow: \`${engine.workflow.config.name}\`\n\n` +
           `Current branch: \`${branch ?? "(detached HEAD)"}\`\n\n` +
           `Working tree: ${clean ? "clean" : "has uncommitted changes"}\n\n` +
-          `Click to open the dashboard.`,
+          `Click to open the Gitwe menu.`,
       );
       this.item.show();
     } catch {

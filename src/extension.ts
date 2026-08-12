@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { GitweBranchesProvider } from "./branchesTreeProvider";
+import { GitweTagsProvider } from "./tagsTreeProvider";
 import { GitweStatusBar } from "./statusBar";
 import { GitwePanel } from "./webview/GitwePanel";
 import { startBranchCommand } from "./commands/start";
@@ -15,6 +16,13 @@ import { deleteBranchCommand } from "./commands/deleteBranch";
 import { pullCommand, pushCommand } from "./commands/pullPush";
 import { showCommitInfoCommand } from "./commands/commitInfo";
 import { showCurrentBranchCommand } from "./commands/currentBranch";
+import { publishBranchCommand } from "./commands/publish";
+import { trackBranchCommand } from "./commands/track";
+import { updateBranchCommand } from "./commands/update";
+import { checkoutBaseBranchCommand, syncBaseBranchesCommand } from "./commands/baseBranches";
+import { listTagsCommand, pushTagCommand, deleteTagCommand } from "./commands/tags";
+import { initWorkflowCommand } from "./commands/init";
+import { openGitweMenuCommand, branchTypeMenuCommand, baseBranchMenuCommand, tagMenuCommand } from "./commands/menu";
 
 export function activate(context: vscode.ExtensionContext): void {
   const outputChannel = vscode.window.createOutputChannel("Gitwe");
@@ -24,12 +32,17 @@ export function activate(context: vscode.ExtensionContext): void {
   const treeView = vscode.window.createTreeView("gitweBranches", { treeDataProvider: branchesProvider });
   context.subscriptions.push(treeView);
 
+  const tagsProvider = new GitweTagsProvider(outputChannel);
+  const tagsTreeView = vscode.window.createTreeView("gitweTags", { treeDataProvider: tagsProvider });
+  context.subscriptions.push(tagsTreeView);
+
   const statusBar = new GitweStatusBar(outputChannel);
   context.subscriptions.push(statusBar);
   statusBar.show();
 
   const refreshAll = (): void => {
     branchesProvider.refresh();
+    tagsProvider.refresh();
     void statusBar.refresh();
   };
 
@@ -38,7 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
   if (vscode.workspace.workspaceFolders) {
     for (const folder of vscode.workspace.workspaceFolders) {
       const watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(folder, ".git/{HEAD,refs/heads/**}"),
+        new vscode.RelativePattern(folder, ".git/{HEAD,refs/heads/**,refs/tags/**}"),
       );
       watcher.onDidChange(refreshAll);
       watcher.onDidCreate(refreshAll);
@@ -72,6 +85,26 @@ export function activate(context: vscode.ExtensionContext): void {
   register("gitwe.push", () => pushCommand(outputChannel));
   register("gitwe.commitInfo", () => showCommitInfoCommand(outputChannel));
   register("gitwe.currentBranch", () => showCurrentBranchCommand(outputChannel));
+
+  // ── Phase 1: git-flow-parity branch operations ──────────────────────────
+  register("gitwe.publish", (branch?: string) => publishBranchCommand(outputChannel, branch));
+  register("gitwe.track", () => trackBranchCommand(outputChannel, refreshAll));
+  register("gitwe.update", (branch?: string) => updateBranchCommand(outputChannel, refreshAll, branch));
+  register("gitwe.checkoutBase", () => checkoutBaseBranchCommand(outputChannel, refreshAll));
+  register("gitwe.syncBase", () => syncBaseBranchesCommand(outputChannel, refreshAll));
+  register("gitwe.menu", () => openGitweMenuCommand(outputChannel, refreshAll));
+  register("gitwe.branchTypeMenu", (typeName?: string) => branchTypeMenuCommand(outputChannel, refreshAll, typeName));
+  register("gitwe.baseBranchMenu", () => baseBranchMenuCommand(refreshAll));
+  register("gitwe.tagMenu", () => tagMenuCommand(refreshAll));
+
+  // ── Phase 2: tags + in-editor init ───────────────────────────────────────
+  register("gitwe.listTags", () => listTagsCommand(outputChannel));
+  register("gitwe.pushTag", () => pushTagCommand(outputChannel));
+  register("gitwe.deleteTag", () => deleteTagCommand(outputChannel));
+  register("gitwe.init", () => initWorkflowCommand(outputChannel, refreshAll));
+
+  // ── Phase 3: tags sidebar view ────────────────────────────────────────────
+  register("gitwe.refreshTags", () => tagsProvider.refresh());
 }
 
 export function deactivate(): void {

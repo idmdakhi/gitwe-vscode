@@ -2,7 +2,7 @@
   "name": "gitwe-vscode-extension",
   "displayName": "Gitwe — Git Workflow Engine",
   "description": "Start, finish, and inspect git-flow (or any pluggable) branching workflows from VS Code — command palette, tree view, and dashboard.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "git-workflow-engine",
   "license": "MIT",
   "repository": {
@@ -99,6 +99,71 @@
       {
         "command": "gitwe.currentBranch",
         "title": "Gitwe: Show Current Branch"
+      },
+      {
+        "command": "gitwe.publish",
+        "title": "Gitwe: Publish Branch..."
+      },
+      {
+        "command": "gitwe.track",
+        "title": "Gitwe: Track Remote Branch..."
+      },
+      {
+        "command": "gitwe.update",
+        "title": "Gitwe: Update Branch from Base..."
+      },
+      {
+        "command": "gitwe.checkoutBase",
+        "title": "Gitwe: Checkout Base Branch..."
+      },
+      {
+        "command": "gitwe.syncBase",
+        "title": "Gitwe: Sync Base Branches"
+      },
+      {
+        "command": "gitwe.menu",
+        "title": "Gitwe: Menu..."
+      },
+      {
+        "command": "gitwe.branchTypeMenu",
+        "title": "Gitwe: Branch Type Menu..."
+      },
+      {
+        "command": "gitwe.baseBranchMenu",
+        "title": "Gitwe: Base Branch Menu..."
+      },
+      {
+        "command": "gitwe.tagMenu",
+        "title": "Gitwe: Tag Menu..."
+      },
+      {
+        "command": "gitwe.listTags",
+        "title": "Gitwe: List Tags"
+      },
+      {
+        "command": "gitwe.pushTag",
+        "title": "Gitwe: Push Tag..."
+      },
+      {
+        "command": "gitwe.deleteTag",
+        "title": "Gitwe: Delete Tag..."
+      },
+      {
+        "command": "gitwe.init",
+        "title": "Gitwe: Initialize Workflow..."
+      },
+      {
+        "command": "gitwe.refreshTags",
+        "title": "Gitwe: Refresh Tags",
+        "icon": "$(refresh)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "gitwe.menu",
+        "key": "shift+alt+g",
+        "mac": "shift+alt+g",
+        "when": "workspaceFolderCount != 0"
       }
     ],
     "configuration": {
@@ -161,6 +226,11 @@
           "id": "gitweBranches",
           "name": "Branches",
           "icon": "media/activitybar-icon.svg"
+        },
+        {
+          "id": "gitweTags",
+          "name": "Tags",
+          "icon": "media/activitybar-icon.svg"
         }
       ]
     },
@@ -180,6 +250,21 @@
           "command": "gitwe.openDashboard",
           "when": "view == gitweBranches",
           "group": "navigation@3"
+        },
+        {
+          "command": "gitwe.init",
+          "when": "view == gitweBranches",
+          "group": "navigation@4"
+        },
+        {
+          "command": "gitwe.refreshTags",
+          "when": "view == gitweTags",
+          "group": "navigation@1"
+        },
+        {
+          "command": "gitwe.pushTag",
+          "when": "view == gitweTags",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -193,13 +278,41 @@
           "when": "view == gitweBranches && viewItem == gitweBranch"
         },
         {
+          "command": "gitwe.publish",
+          "when": "view == gitweBranches && viewItem == gitweBranch"
+        },
+        {
+          "command": "gitwe.update",
+          "when": "view == gitweBranches && viewItem == gitweBranch"
+        },
+        {
           "command": "gitwe.deleteBranch",
           "when": "view == gitweBranches && viewItem == gitweBranch"
+        },
+        {
+          "command": "gitwe.pushTag",
+          "when": "view == gitweTags && viewItem == gitweTag"
+        },
+        {
+          "command": "gitwe.deleteTag",
+          "when": "view == gitweTags && viewItem == gitweTag"
         }
       ],
       "commandPalette": [
         {
           "command": "gitwe.checkoutBranch",
+          "when": "false"
+        },
+        {
+          "command": "gitwe.branchTypeMenu",
+          "when": "false"
+        },
+        {
+          "command": "gitwe.baseBranchMenu",
+          "when": "false"
+        },
+        {
+          "command": "gitwe.tagMenu",
           "when": "false"
         }
       ]
@@ -207,21 +320,22 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "node esbuild.js --production",
+    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
+    "build": "npm run clean && node esbuild.js --production",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "package": "vsce package"
   },
   "dependencies": {
-    "gitwe": "git+https://github.com/idmdakhi/gitwe.git"
+    "gitwe-ts": "^0.23.3"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
+    "@types/node": "^20.19.43",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
-    "@vscode/vsce": "^2.32.0",
+    "@vscode/vsce": "^2.29.0",
     "esbuild": "^0.21.0",
     "eslint": "^8.57.0",
     "typescript": "^5.5.0"

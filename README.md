@@ -14,22 +14,36 @@ logic to keep in sync.
 ## Features
 
 - **Command Palette** — every gitwe operation as a command: `Gitwe: Start
-  Branch...`, `Gitwe: Finish Branch...`, `Gitwe: Show Status`, `Gitwe: Show
-  Branch Graph`, `Gitwe: Run Doctor`, `Gitwe: Validate Workflow Config...`,
+  Branch...`, `Gitwe: Finish Branch...`, `Gitwe: Publish Branch...`,
+  `Gitwe: Track Remote Branch...`, `Gitwe: Update Branch from Base...`,
+  `Gitwe: Show Status`, `Gitwe: Show Branch Graph`, `Gitwe: Run Doctor`,
+  `Gitwe: Validate Workflow Config...`, `Gitwe: Initialize Workflow...`,
   plus advanced git operations — `Gitwe: Pull`, `Gitwe: Push`, `Gitwe:
-  Delete Branch...`, `Gitwe: Show Commit Info...`, `Gitwe: Show Current
-  Branch`.
-- **Sidebar view** — an activity bar panel listing every configured branch
-  type as a group, with its live branches underneath. Click a branch to
-  check it out; right-click for Finish / Delete.
+  Checkout Base Branch...`, `Gitwe: Sync Base Branches`, `Gitwe: Delete
+  Branch...`, `Gitwe: List/Push/Delete Tag...`, `Gitwe: Show Commit
+  Info...`, `Gitwe: Show Current Branch`.
+- **Gitwe menu** — `Gitwe: Menu...` (default keybinding `Shift+Alt+G`, and
+  the status bar item's click target) opens a Quick Pick with one submenu
+  per configured branch type (Start/Finish/Publish/Update/Track/
+  Checkout/Delete), plus Base branches and Tags submenus — the git-flow
+  UX from [vscode-gitflow](https://github.com/Serhioromano/vscode-gitflow),
+  driven dynamically by whatever branch types the active workflow defines
+  instead of hard-coded Feature/Release/Hotfix/Support names.
+- **Sidebar** — two views: **Branches** (every configured branch type as a
+  group, with its live branches underneath — click to check out,
+  right-click for Finish / Publish / Update / Delete) and **Tags** (every
+  git tag, right-click to push or delete).
 - **Status bar** — always-visible current branch and dirty/clean indicator;
-  click it to open the dashboard.
+  click it to open the Gitwe menu.
 - **Dashboard (WebView GUI)** — a single visual panel showing the active
   workflow, working-tree status, every branch type's rules, and a live
   branch graph, with Start / Pull / Push / Doctor buttons.
-- Reacts automatically to branch switches made outside the extension
+- Reacts automatically to branch/tag changes made outside the extension
   (terminal `git checkout`, other extensions) by watching `.git/HEAD` and
-  `.git/refs/heads`.
+  `.git/refs`.
+
+See `docs/todo.md` for the roadmap this feature set was implemented from,
+and its remaining/optional items.
 
 ## Requirements
 

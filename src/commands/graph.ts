@@ -1,9 +1,12 @@
 import * as vscode from "vscode";
-import type { OverviewReport } from "gitwe";
+import type { OverviewReport } from "gitwe-ts";
 import { getEngine, pickWorkspaceFolder } from "../gitweClient";
 import { requireWorkspaceFolder, showGitweError } from "../util/errors";
 
-function renderGraph(report: OverviewReport, outputChannel: vscode.OutputChannel): void {
+function renderGraph(
+  report: OverviewReport,
+  outputChannel: vscode.OutputChannel,
+): void {
   outputChannel.appendLine("Base branches:");
   for (const base of report.baseBranches) {
     const marks: string[] = [];
@@ -12,7 +15,9 @@ function renderGraph(report: OverviewReport, outputChannel: vscode.OutputChannel
     if (base.ahead > 0) marks.push(`↑${base.ahead}`);
     if (base.behind > 0) marks.push(`↓${base.behind}`);
     const indent = base.base ? "  " : "";
-    outputChannel.appendLine(`${indent}${base.name}${marks.length ? ` (${marks.join(", ")})` : ""}`);
+    outputChannel.appendLine(
+      `${indent}${base.name}${marks.length ? ` (${marks.join(", ")})` : ""}`,
+    );
   }
 
   outputChannel.appendLine("");
@@ -26,7 +31,9 @@ function renderGraph(report: OverviewReport, outputChannel: vscode.OutputChannel
   }
 }
 
-export async function showGraphCommand(outputChannel: vscode.OutputChannel): Promise<void> {
+export async function showGraphCommand(
+  outputChannel: vscode.OutputChannel,
+): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
