@@ -1,20 +1,24 @@
 {
-  "name": "gitwe-vscode",
-  "displayName": "Gitwe — Git Workflow Engine",
+  "name": "gitwe-vsce",
+  "displayName": "Gitwe - Git Workflow Engine",
   "description": "Start, finish, and inspect git-flow (or any pluggable) branching workflows from VS Code — command palette, tree view, and dashboard.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "idmdakhi",
   "license": "MIT",
+  "author": {
+    "name": "Mohammad Amanalikhani"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/idmdakhi/gitwe-vscode-extension.git"
+    "url": "https://github.com/idmdakhi/gitwe-vscode.git"
   },
   "bugs": {
-    "url": "https://github.com/idmdakhi/gitwe-vscode-extension/issues"
+    "url": "https://github.com/idmdakhi/gitwe-vscode/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
   },
+  "pricing": "Free",
   "categories": [
     "SCM Providers",
     "Other"
@@ -377,7 +381,7 @@
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
-    "@vscode/vsce": "^2.29.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.21.0",
     "eslint": "^8.57.0",
     "typescript": "^5.5.0"
