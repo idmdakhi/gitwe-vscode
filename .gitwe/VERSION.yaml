@@ -1,5 +1,5 @@
 # .gitwe/VERSION.yaml
-version: 0.23.3
+version: 0.3.0
 
 tagPrefix: v
 format: "{{tagPrefix}}{{major}}.{{minor}}.{{patch}}" # {{#if prerelease}}-{{prerelease}}{{/if}}"

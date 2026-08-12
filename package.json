@@ -1,9 +1,9 @@
 {
-  "name": "gitwe-vscode-extension",
+  "name": "gitwe-vscode",
   "displayName": "Gitwe — Git Workflow Engine",
   "description": "Start, finish, and inspect git-flow (or any pluggable) branching workflows from VS Code — command palette, tree view, and dashboard.",
   "version": "0.3.0",
-  "publisher": "git-workflow-engine",
+  "publisher": "idmdakhi",
   "license": "MIT",
   "repository": {
     "type": "git",
