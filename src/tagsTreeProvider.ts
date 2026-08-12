@@ -2,14 +2,13 @@ import * as vscode from "vscode";
 import { getEngine, pickWorkspaceFolder } from "./gitweClient";
 import { showGitweError } from "./util/errors";
 
-class TagItem extends vscode.TreeItem {
+export class TagItem extends vscode.TreeItem {
   constructor(public readonly tagName: string) {
     super(tagName, vscode.TreeItemCollapsibleState.None);
     this.iconPath = new vscode.ThemeIcon("tag");
     this.contextValue = "gitweTag";
   }
 }
-
 class MessageItem extends vscode.TreeItem {
   constructor(message: string) {
     super(message, vscode.TreeItemCollapsibleState.None);
@@ -18,8 +17,12 @@ class MessageItem extends vscode.TreeItem {
 }
 
 /** Sidebar view listing every git tag — the "separate SCM view for versions/tags" from the roadmap. */
-export class GitweTagsProvider implements vscode.TreeDataProvider<TagItem | MessageItem> {
-  private readonly changeEmitter = new vscode.EventEmitter<TagItem | MessageItem | undefined>();
+export class GitweTagsProvider implements vscode.TreeDataProvider<
+  TagItem | MessageItem
+> {
+  private readonly changeEmitter = new vscode.EventEmitter<
+    TagItem | MessageItem | undefined
+  >();
   readonly onDidChangeTreeData = this.changeEmitter.event;
 
   constructor(private readonly outputChannel: vscode.OutputChannel) {}
@@ -34,7 +37,8 @@ export class GitweTagsProvider implements vscode.TreeDataProvider<TagItem | Mess
 
   async getChildren(): Promise<(TagItem | MessageItem)[]> {
     const folder = pickWorkspaceFolder();
-    if (!folder) return [new MessageItem("Open a folder with a git repository.")];
+    if (!folder)
+      return [new MessageItem("Open a folder with a git repository.")];
 
     try {
       const engine = await getEngine(folder, this.outputChannel);
@@ -44,7 +48,9 @@ export class GitweTagsProvider implements vscode.TreeDataProvider<TagItem | Mess
       return [...tags].reverse().map((tag) => new TagItem(tag));
     } catch (error) {
       await showGitweError(error, this.outputChannel);
-      return [new MessageItem("Failed to load — see the Gitwe output channel.")];
+      return [
+        new MessageItem("Failed to load — see the Gitwe output channel."),
+      ];
     }
   }
 }

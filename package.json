@@ -2,7 +2,7 @@
   "name": "gitwe-vscode-extension",
   "displayName": "Gitwe — Git Workflow Engine",
   "description": "Start, finish, and inspect git-flow (or any pluggable) branching workflows from VS Code — command palette, tree view, and dashboard.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "git-workflow-engine",
   "license": "MIT",
   "repository": {
@@ -156,6 +156,10 @@
         "command": "gitwe.refreshTags",
         "title": "Gitwe: Refresh Tags",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "gitwe.rebase",
+        "title": "Gitwe: Rebase onto Base..."
       }
     ],
     "keybindings": [
@@ -270,24 +274,58 @@
       "view/item/context": [
         {
           "command": "gitwe.checkoutBranch",
-          "when": "view == gitweBranches && viewItem == gitweBranch",
+          "when": "view == gitweBranches && viewItem =~ /gitweBranch/",
           "group": "inline"
         },
         {
           "command": "gitwe.finish",
-          "when": "view == gitweBranches && viewItem == gitweBranch"
+          "when": "view == gitweBranches && viewItem =~ /canFinish/",
+          "group": "1_flow@1"
         },
         {
           "command": "gitwe.publish",
-          "when": "view == gitweBranches && viewItem == gitweBranch"
+          "when": "view == gitweBranches && viewItem =~ /canPublish/",
+          "group": "1_flow@2"
         },
         {
           "command": "gitwe.update",
-          "when": "view == gitweBranches && viewItem == gitweBranch"
+          "when": "view == gitweBranches && viewItem =~ /canUpdate/",
+          "group": "1_flow@3"
+        },
+        {
+          "command": "gitwe.rebase",
+          "when": "view == gitweBranches && viewItem =~ /canRebase/",
+          "group": "1_flow@4"
+        },
+        {
+          "command": "gitwe.track",
+          "when": "view == gitweBranches && viewItem =~ /gitweBranch|gitweRemoteBranch/",
+          "group": "1_flow@5"
         },
         {
           "command": "gitwe.deleteBranch",
-          "when": "view == gitweBranches && viewItem == gitweBranch"
+          "when": "view == gitweBranches && viewItem =~ /canDelete/",
+          "group": "9_danger"
+        },
+        {
+          "command": "gitwe.track",
+          "when": "view == gitweBranches && viewItem == gitweRemoteBranch",
+          "group": "1_flow@1"
+        },
+        {
+          "command": "gitwe.start",
+          "when": "view == gitweBranches && viewItem == gitweBranchType",
+          "group": "1_type@1"
+        },
+        {
+          "command": "gitwe.track",
+          "when": "view == gitweBranches && viewItem == gitweBranchType",
+          "group": "1_type@2"
+        },
+        {
+          "command": "gitwe.branchTypeMenu",
+          "when": "view == gitweBranches && viewItem == gitweBranchType",
+          "group": "1_type@3"
         },
         {
           "command": "gitwe.pushTag",

@@ -552,3 +552,19 @@ Fetch و Sync root branches
 Auto-bump package.json هنگام start/finish release/hotfix (علاوه بر versioning خود gitwe)
 Auto-update CHANGELOG.md
 View جدا در SCM برای Versions/Tags
+
+UX پوشش داده شده:
+
+Publish / Track / Update / Rebase
+Local + Remote tree
+Finish wizard پایه
+Capability-aware menus
+Tags از sidebar
+Dashboard غنی‌تر
+Start با type از پیش‌انتخاب‌شده
+
+قدم‌های باقی‌ماندهٔ سنگین‌تر (نیاز به Engine):
+
+capabilities واقعی روی BranchType در gitwe-ts
+Finish با انتخاب strategy / multi-target از API
+Delete remote به‌صورت first-class

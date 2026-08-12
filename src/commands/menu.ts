@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { getEngine, pickWorkspaceFolder } from "../gitweClient";
 import { requireWorkspaceFolder, showGitweError } from "../util/errors";
+import { capabilitiesForType } from "../util/capabilities";
 
 interface MenuAction {
   label: string;
@@ -16,7 +17,10 @@ interface MenuAction {
  * mirroring vscode-gitflow's per-type submenus, but driven by whatever
  * branch types the active workflow actually defines.
  */
-export async function openGitweMenuCommand(outputChannel: vscode.OutputChannel, onDone: () => void): Promise<void> {
+export async function openGitweMenuCommand(
+  outputChannel: vscode.OutputChannel,
+  onDone: () => void,
+): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
@@ -28,13 +32,31 @@ export async function openGitweMenuCommand(outputChannel: vscode.OutputChannel, 
       ...engine.workflow.branchTypes.map((type) => ({
         label: `$(folder) ${type.name}`,
         description: `${type.prefix}* → ${type.target.join(", ") || "(none)"}`,
-        run: () => vscode.commands.executeCommand("gitwe.branchTypeMenu", type.name),
+        run: () =>
+          vscode.commands.executeCommand("gitwe.branchTypeMenu", type.name),
       })),
-      { label: "$(git-branch) Base branches", description: "checkout / sync main, develop, …", run: () => vscode.commands.executeCommand("gitwe.baseBranchMenu") },
-      { label: "$(tag) Tags", description: "list / push / delete", run: () => vscode.commands.executeCommand("gitwe.tagMenu") },
-      { label: "$(dashboard) Open Dashboard", run: () => vscode.commands.executeCommand("gitwe.openDashboard") },
-      { label: "$(pulse) Show Status", run: () => vscode.commands.executeCommand("gitwe.status") },
-      { label: "$(checklist) Run Doctor", run: () => vscode.commands.executeCommand("gitwe.doctor") },
+      {
+        label: "$(git-branch) Base branches",
+        description: "checkout / sync main, develop, …",
+        run: () => vscode.commands.executeCommand("gitwe.baseBranchMenu"),
+      },
+      {
+        label: "$(tag) Tags",
+        description: "list / push / delete",
+        run: () => vscode.commands.executeCommand("gitwe.tagMenu"),
+      },
+      {
+        label: "$(dashboard) Open Dashboard",
+        run: () => vscode.commands.executeCommand("gitwe.openDashboard"),
+      },
+      {
+        label: "$(pulse) Show Status",
+        run: () => vscode.commands.executeCommand("gitwe.status"),
+      },
+      {
+        label: "$(checklist) Run Doctor",
+        run: () => vscode.commands.executeCommand("gitwe.doctor"),
+      },
     ];
 
     const picked = await vscode.window.showQuickPick(topLevel, {
@@ -69,19 +91,59 @@ export async function branchTypeMenuCommand(
       name = picked;
     }
     const type = engine.workflow.requireBranchType(name);
-
+    const caps = capabilitiesForType(type.name, type.target.length > 0);
     const branches = await engine.listBranchTypes(type);
     const branchLabel = branches.length > 0 ? ` (${branches.length})` : "";
 
-    const actions: MenuAction[] = [
-      { label: "$(add) Start", run: () => vscode.commands.executeCommand("gitwe.start") },
-      { label: `$(check) Finish${branchLabel}`, run: () => vscode.commands.executeCommand("gitwe.finish") },
-      { label: `$(cloud-upload) Publish${branchLabel}`, run: () => vscode.commands.executeCommand("gitwe.publish") },
-      { label: `$(sync) Update from base${branchLabel}`, run: () => vscode.commands.executeCommand("gitwe.update") },
-      { label: "$(cloud-download) Track remote branch", run: () => vscode.commands.executeCommand("gitwe.track") },
-      { label: `$(arrow-swap) Checkout${branchLabel}`, run: () => vscode.commands.executeCommand("gitwe.checkoutBranch") },
-      { label: `$(trash) Delete${branchLabel}`, run: () => vscode.commands.executeCommand("gitwe.deleteBranch") },
-    ];
+    const actions: MenuAction[] = [];
+    if (caps.start) {
+      actions.push({
+        label: "$(add) Start",
+        run: () => vscode.commands.executeCommand("gitwe.start", type.name),
+      });
+    }
+    if (caps.finish) {
+      actions.push({
+        label: `$(check) Finish${branchLabel}`,
+        run: () => vscode.commands.executeCommand("gitwe.finish"),
+      });
+    }
+    if (caps.publish) {
+      actions.push({
+        label: `$(cloud-upload) Publish${branchLabel}`,
+        run: () => vscode.commands.executeCommand("gitwe.publish"),
+      });
+    }
+    if (caps.pull) {
+      actions.push({
+        label: `$(sync) Update from base${branchLabel}`,
+        run: () => vscode.commands.executeCommand("gitwe.update"),
+      });
+    }
+    if (caps.rebase) {
+      actions.push({
+        label: `$(git-compare) Rebase onto base${branchLabel}`,
+        run: () => vscode.commands.executeCommand("gitwe.rebase"),
+      });
+    }
+    if (caps.track) {
+      actions.push({
+        label: "$(cloud-download) Track remote branch",
+        run: () => vscode.commands.executeCommand("gitwe.track"),
+      });
+    }
+    if (caps.checkout) {
+      actions.push({
+        label: `$(arrow-swap) Checkout${branchLabel}`,
+        run: () => vscode.commands.executeCommand("gitwe.checkoutBranch"),
+      });
+    }
+    if (caps.delete) {
+      actions.push({
+        label: `$(trash) Delete${branchLabel}`,
+        run: () => vscode.commands.executeCommand("gitwe.deleteBranch"),
+      });
+    }
 
     const picked = await vscode.window.showQuickPick(actions, {
       title: `Gitwe: ${type.name}`,
@@ -96,21 +158,40 @@ export async function branchTypeMenuCommand(
 
 export async function baseBranchMenuCommand(onDone: () => void): Promise<void> {
   const actions: MenuAction[] = [
-    { label: "$(arrow-swap) Checkout base branch", run: () => vscode.commands.executeCommand("gitwe.checkoutBase") },
-    { label: "$(sync) Fetch && sync all base branches", run: () => vscode.commands.executeCommand("gitwe.syncBase") },
+    {
+      label: "$(arrow-swap) Checkout base branch",
+      run: () => vscode.commands.executeCommand("gitwe.checkoutBase"),
+    },
+    {
+      label: "$(sync) Fetch && sync all base branches",
+      run: () => vscode.commands.executeCommand("gitwe.syncBase"),
+    },
   ];
-  const picked = await vscode.window.showQuickPick(actions, { title: "Gitwe: Base branches" });
+  const picked = await vscode.window.showQuickPick(actions, {
+    title: "Gitwe: Base branches",
+  });
   await picked?.run();
   onDone();
 }
 
 export async function tagMenuCommand(onDone: () => void): Promise<void> {
   const actions: MenuAction[] = [
-    { label: "$(list-unordered) List tags", run: () => vscode.commands.executeCommand("gitwe.listTags") },
-    { label: "$(cloud-upload) Push a tag", run: () => vscode.commands.executeCommand("gitwe.pushTag") },
-    { label: "$(trash) Delete a tag", run: () => vscode.commands.executeCommand("gitwe.deleteTag") },
+    {
+      label: "$(list-unordered) List tags",
+      run: () => vscode.commands.executeCommand("gitwe.listTags"),
+    },
+    {
+      label: "$(cloud-upload) Push a tag",
+      run: () => vscode.commands.executeCommand("gitwe.pushTag"),
+    },
+    {
+      label: "$(trash) Delete a tag",
+      run: () => vscode.commands.executeCommand("gitwe.deleteTag"),
+    },
   ];
-  const picked = await vscode.window.showQuickPick(actions, { title: "Gitwe: Tags" });
+  const picked = await vscode.window.showQuickPick(actions, {
+    title: "Gitwe: Tags",
+  });
   await picked?.run();
   onDone();
 }

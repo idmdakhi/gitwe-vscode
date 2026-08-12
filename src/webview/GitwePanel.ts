@@ -40,6 +40,10 @@ type InboundMessage =
   | { type: "runDoctor" }
   | { type: "start" }
   | { type: "finish"; branch: string }
+  | { type: "publish"; branch: string }
+  | { type: "update"; branch: string }
+  | { type: "rebase"; branch: string }
+  | { type: "track" }
   | { type: "pull" }
   | { type: "push" };
 
@@ -53,15 +57,23 @@ type InboundMessage =
 export class GitwePanel {
   private static current: GitwePanel | undefined;
 
-  static show(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel): void {
+  static show(
+    context: vscode.ExtensionContext,
+    outputChannel: vscode.OutputChannel,
+  ): void {
     if (GitwePanel.current) {
       GitwePanel.current.panel.reveal();
       return;
     }
-    const panel = vscode.window.createWebviewPanel("gitweDashboard", "Gitwe Dashboard", vscode.ViewColumn.One, {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-    });
+    const panel = vscode.window.createWebviewPanel(
+      "gitweDashboard",
+      "Gitwe Dashboard",
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+      },
+    );
     GitwePanel.current = new GitwePanel(panel, context, outputChannel);
   }
 
@@ -71,8 +83,14 @@ export class GitwePanel {
     private readonly outputChannel: vscode.OutputChannel,
   ) {
     this.panel.webview.html = this.renderShell();
-    this.panel.onDidDispose(() => (GitwePanel.current = undefined), null, context.subscriptions);
-    this.panel.webview.onDidReceiveMessage((message: InboundMessage) => this.handleMessage(message));
+    this.panel.onDidDispose(
+      () => (GitwePanel.current = undefined),
+      null,
+      context.subscriptions,
+    );
+    this.panel.webview.onDidReceiveMessage((message: InboundMessage) =>
+      this.handleMessage(message),
+    );
   }
 
   private async handleMessage(message: InboundMessage): Promise<void> {
@@ -91,6 +109,22 @@ export class GitwePanel {
         return;
       case "finish":
         await vscode.commands.executeCommand("gitwe.finish", message.branch);
+        await this.postData();
+        return;
+      case "publish":
+        await vscode.commands.executeCommand("gitwe.publish", message.branch);
+        await this.postData();
+        return;
+      case "update":
+        await vscode.commands.executeCommand("gitwe.update", message.branch);
+        await this.postData();
+        return;
+      case "rebase":
+        await vscode.commands.executeCommand("gitwe.rebase", message.branch);
+        await this.postData();
+        return;
+      case "track":
+        await vscode.commands.executeCommand("gitwe.track");
         await this.postData();
         return;
       case "pull":
@@ -120,11 +154,15 @@ export class GitwePanel {
       health: [],
       error: undefined,
     };
-    if (!folder) return { ...empty, error: "Open a folder with a git repository." };
+    if (!folder)
+      return { ...empty, error: "Open a folder with a git repository." };
 
     try {
       const engine = await getEngine(folder, this.outputChannel);
-      const [clean, report] = await Promise.all([engine.git.isClean(), engine.overview()]);
+      const [clean, report] = await Promise.all([
+        engine.git.isClean(),
+        engine.overview(),
+      ]);
 
       return {
         workflowName: report.workflow,
@@ -150,7 +188,10 @@ export class GitwePanel {
       };
     } catch (error) {
       await showGitweError(error, this.outputChannel);
-      return { ...empty, error: error instanceof Error ? error.message : String(error) };
+      return {
+        ...empty,
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
@@ -196,6 +237,7 @@ export class GitwePanel {
     <button id="push" class="secondary">Push</button>
     <button id="doctor" class="secondary">Run Doctor</button>
     <button id="refresh" class="secondary">Refresh</button>
+    <button id="track" class="secondary">Track Remote</button>
   </div>
 
   <section>
@@ -295,8 +337,33 @@ export class GitwePanel {
       } else {
         t.branches.forEach((name) => {
           const finishBtn = el("button", { text: "Finish" });
-          finishBtn.addEventListener("click", () => vscode.postMessage({ type: "finish", branch: name }));
-          list.appendChild(el("li", { class: "branch-row" }, [el("span", { text: name }), finishBtn]));
+          finishBtn.addEventListener("click", () =>
+            vscode.postMessage({ type: "finish", branch: name }),
+          );
+
+          const publishBtn = el("button", { text: "Publish", class: "secondary" });
+          publishBtn.addEventListener("click", () =>
+            vscode.postMessage({ type: "publish", branch: name }),
+          );
+
+          const updateBtn = el("button", { text: "Update", class: "secondary" });
+          updateBtn.addEventListener("click", () =>
+            vscode.postMessage({ type: "update", branch: name }),
+          );
+
+          const rebaseBtn = el("button", { text: "Rebase", class: "secondary" });
+          rebaseBtn.addEventListener("click", () =>
+            vscode.postMessage({ type: "rebase", branch: name }),
+          );
+
+          const actions = el(
+            "span",
+            { style: "display:flex;gap:4px;flex-wrap:wrap;" },
+            [finishBtn, publishBtn, updateBtn, rebaseBtn],
+          );
+          list.appendChild(
+            el("li", { class: "branch-row" }, [el("span", { text: name }), actions]),
+          );
         });
       }
       section.appendChild(list);
@@ -309,7 +376,9 @@ export class GitwePanel {
   document.getElementById("push").addEventListener("click", () => vscode.postMessage({ type: "push" }));
   document.getElementById("doctor").addEventListener("click", () => vscode.postMessage({ type: "runDoctor" }));
   document.getElementById("refresh").addEventListener("click", () => vscode.postMessage({ type: "refresh" }));
-
+  document.getElementById("track").addEventListener("click", () =>
+    vscode.postMessage({ type: "track" }),
+  );
   window.addEventListener("message", (event) => {
     const message = event.data;
     if (message.type === "data") render(message.payload);

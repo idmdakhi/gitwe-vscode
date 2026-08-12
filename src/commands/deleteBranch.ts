@@ -1,11 +1,17 @@
 import * as vscode from "vscode";
-import { getEngine, listTopicBranches, pickWorkspaceFolder } from "../gitweClient";
+import {
+  getEngine,
+  listTopicBranches,
+  pickWorkspaceFolder,
+} from "../gitweClient";
 import { requireWorkspaceFolder, showGitweError } from "../util/errors";
+import { resolveBranchArg } from "../util/treeArgs";
+import type { BranchItem } from "../branchesTreeProvider";
 
 export async function deleteBranchCommand(
   outputChannel: vscode.OutputChannel,
   onDone: () => void,
-  branchName?: string,
+  branchArg?: string | BranchItem,
 ): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
@@ -13,7 +19,7 @@ export async function deleteBranchCommand(
   try {
     const engine = await getEngine(folder, outputChannel);
 
-    let target = branchName;
+    let target = resolveBranchArg(branchArg);
     if (!target) {
       const branches = await listTopicBranches(engine);
       const picked = await vscode.window.showQuickPick(
@@ -26,7 +32,9 @@ export async function deleteBranchCommand(
 
     const resolved = engine.workflow.resolveBranch(target);
     if (!resolved) {
-      void vscode.window.showErrorMessage(`Gitwe: "${target}" does not match any configured branch type.`);
+      void vscode.window.showErrorMessage(
+        `Gitwe: "${target}" does not match any configured branch type.`,
+      );
       return;
     }
 

@@ -1,8 +1,12 @@
 import * as vscode from "vscode";
 import { getEngine, pickWorkspaceFolder } from "../gitweClient";
 import { requireWorkspaceFolder, showGitweError } from "../util/errors";
+import { resolveTagArg } from "../util/treeArgs";
+import type { TagItem } from "../tagsTreeProvider";
 
-export async function listTagsCommand(outputChannel: vscode.OutputChannel): Promise<void> {
+export async function listTagsCommand(
+  outputChannel: vscode.OutputChannel,
+): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
@@ -21,44 +25,69 @@ export async function listTagsCommand(outputChannel: vscode.OutputChannel): Prom
   }
 }
 
-export async function pushTagCommand(outputChannel: vscode.OutputChannel): Promise<void> {
+export async function pushTagCommand(
+  outputChannel: vscode.OutputChannel,
+  tagArg?: string | TagItem,
+): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
   try {
     const engine = await getEngine(folder, outputChannel);
-    const tags = await engine.git.tags();
-    if (tags.length === 0) {
-      void vscode.window.showInformationMessage("Gitwe: no tags to push.");
-      return;
+    let tag = resolveTagArg(tagArg);
+
+    if (!tag) {
+      const tags = await engine.git.tags();
+      if (tags.length === 0) {
+        void vscode.window.showInformationMessage("Gitwe: no tags to push.");
+        return;
+      }
+      tag = await vscode.window.showQuickPick(tags, {
+        placeHolder: "Tag to push",
+        title: "Gitwe: Push Tag",
+      });
+      if (!tag) return;
     }
-    const tag = await vscode.window.showQuickPick(tags, { placeHolder: "Tag to push", title: "Gitwe: Push Tag" });
-    if (!tag) return;
 
     const remote = engine.workflow.remoteName;
     await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: `Gitwe: pushing tag ${tag}…` },
-      () => engine.git.push(remote, tag),
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `Gitwe: pushing tag ${tag}…`,
+      },
+      () => engine.git.push(remote, tag!),
     );
-    void vscode.window.showInformationMessage(`Gitwe: pushed tag ${tag} to ${remote}.`);
+    void vscode.window.showInformationMessage(
+      `Gitwe: pushed tag ${tag} to ${remote}.`,
+    );
   } catch (error) {
     await showGitweError(error, outputChannel);
   }
 }
 
-export async function deleteTagCommand(outputChannel: vscode.OutputChannel): Promise<void> {
+export async function deleteTagCommand(
+  outputChannel: vscode.OutputChannel,
+  tagArg?: string | TagItem,
+): Promise<void> {
   const folder = pickWorkspaceFolder();
   if (!requireWorkspaceFolder(folder)) return;
 
   try {
     const engine = await getEngine(folder, outputChannel);
-    const tags = await engine.git.tags();
-    if (tags.length === 0) {
-      void vscode.window.showInformationMessage("Gitwe: no tags to delete.");
-      return;
+    let tag = resolveTagArg(tagArg);
+
+    if (!tag) {
+      const tags = await engine.git.tags();
+      if (tags.length === 0) {
+        void vscode.window.showInformationMessage("Gitwe: no tags to delete.");
+        return;
+      }
+      tag = await vscode.window.showQuickPick(tags, {
+        placeHolder: "Tag to delete",
+        title: "Gitwe: Delete Tag",
+      });
+      if (!tag) return;
     }
-    const tag = await vscode.window.showQuickPick(tags, { placeHolder: "Tag to delete", title: "Gitwe: Delete Tag" });
-    if (!tag) return;
 
     const scope = await vscode.window.showQuickPick(
       [
@@ -69,7 +98,11 @@ export async function deleteTagCommand(outputChannel: vscode.OutputChannel): Pro
     );
     if (!scope) return;
 
-    const confirm = await vscode.window.showWarningMessage(`Delete tag "${tag}"? This cannot be undone.`, { modal: true }, "Delete");
+    const confirm = await vscode.window.showWarningMessage(
+      `Delete tag "${tag}"? This cannot be undone.`,
+      { modal: true },
+      "Delete",
+    );
     if (confirm !== "Delete") return;
 
     await engine.git.deleteTag(tag);
@@ -77,7 +110,9 @@ export async function deleteTagCommand(outputChannel: vscode.OutputChannel): Pro
       const remote = engine.workflow.remoteName;
       await engine.git.push(remote, tag, { delete: true });
     }
-    void vscode.window.showInformationMessage(`Gitwe: deleted tag ${tag}${scope.value === "both" ? " (local + remote)" : ""}.`);
+    void vscode.window.showInformationMessage(
+      `Gitwe: deleted tag ${tag}${scope.value === "both" ? " (local + remote)" : ""}.`,
+    );
   } catch (error) {
     await showGitweError(error, outputChannel);
   }
