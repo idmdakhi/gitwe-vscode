@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { getEngine, pickWorkspaceFolder } from "./gitweClient";
 import { showGitweError } from "./util/errors";
-import { branchContextValue, capabilitiesForType } from "./util/capabilities";
 import { iconForBranchType } from "./util/branchIcons";
+import { capabilitiesForType, branchContextValue } from "./util/capabilities";
 
 export class BranchTypeItem extends vscode.TreeItem {
   constructor(
@@ -13,22 +13,18 @@ export class BranchTypeItem extends vscode.TreeItem {
   ) {
     super(typeName, vscode.TreeItemCollapsibleState.Expanded);
     this.description = `${prefix} → ${mergeTargets.join(", ") || "(none)"}`;
-    this.iconPath = iconForBranchType(typeName);
+    this.iconPath = iconForBranchType(typeName); // آیکون جدید
     this.contextValue = "gitweBranchType";
     this.tooltip = new vscode.MarkdownString(
-      `**${typeName}**\n\nPrefix: \`${prefix}\`\n\nBase branch: \`${baseBranch}\`\n\nMerges into: ${
-        mergeTargets.map((t) => `\`${t}\``).join(", ") || "(none)"
-      }`,
+      `**${typeName}**\n\nPrefix: \`${prefix}\`\n\nBase: \`${baseBranch}\`\n\nMerges into: ${mergeTargets.map((t) => `\`${t}\``).join(", ") || "(none)"}`,
     );
   }
 }
 
-/** Group header: "Local" or "Remote". */
 export class BranchGroupItem extends vscode.TreeItem {
   constructor(
     public readonly group: "local" | "remote",
     public readonly typeName: string,
-    public readonly prefix: string,
   ) {
     super(
       group === "local" ? "Local" : "Remote",
@@ -53,10 +49,15 @@ export class BranchItem extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon(
       isRemote ? "cloud" : isCurrent ? "check" : "git-branch",
     );
-
-    const caps = capabilitiesForType(typeName ?? "feature", hasTargets);
-    this.contextValue = branchContextValue(caps, isRemote);
-    this.description = isCurrent ? "current" : isRemote ? "remote" : undefined;
+    this.contextValue = branchContextValue(
+      capabilitiesForType(typeName ?? "feature", hasTargets),
+      isRemote,
+    );
+    this.description = isCurrent
+      ? "● current"
+      : isRemote
+        ? "origin"
+        : undefined;
 
     // description
     if (isCurrent) {
@@ -71,7 +72,6 @@ export class BranchItem extends vscode.TreeItem {
         ? `**Remote** \`${branchName}\`\n\nTrack to create a local branch.`
         : `**${branchName}**${isCurrent ? " _(current)_" : ""}\n\nClick to check out · right-click for actions.`,
     );
-
     if (!isRemote) {
       this.command = {
         command: "gitwe.checkoutBranch",
@@ -119,30 +119,25 @@ export class GitweBranchesProvider implements vscode.TreeDataProvider<GitweTreeI
     try {
       const engine = await getEngine(folder, this.outputChannel);
 
-      // Root: branch types
       if (!element) {
-        const types = engine.workflow.branchTypes.map(
+        return engine.workflow.branchTypes.map(
           (type) =>
             new BranchTypeItem(type.name, type.prefix, type.base, type.target),
         );
-        if (!engine.configPath) {
-          // in-memory preset — subtle hint as first row optional
-          // یا فقط در status bar / dashboard نشان دهید
-        }
-        return types;
       }
 
-      // Under a branch type → Local + Remote groups
       if (element instanceof BranchTypeItem) {
+        const caps = capabilitiesForType(
+          element.typeName,
+          element.mergeTargets.length > 0,
+        );
         return [
-          new BranchGroupItem("local", element.typeName, element.prefix),
-          new BranchGroupItem("remote", element.typeName, element.prefix),
+          new BranchGroupItem("local", element.typeName),
+          new BranchGroupItem("remote", element.typeName),
         ];
       }
 
-      // Under Local group → local topic branches
       if (element instanceof BranchGroupItem && element.group === "local") {
-        // Local group
         const type = engine.workflow.requireBranchType(element.typeName);
         const hasTargets = type.target.length > 0;
         const statuses = await engine.listBranchTypes(type);
@@ -151,40 +146,35 @@ export class GitweBranchesProvider implements vscode.TreeDataProvider<GitweTreeI
               (b) =>
                 new BranchItem(b.name, b.current, false, type.name, hasTargets),
             )
-          : [new MessageItem("No branches yet — Start from title bar or menu")];
+          : [
+              new MessageItem(
+                "No local branches yet — right-click type to start.",
+              ),
+            ];
       }
 
-      // Under Remote group → remote branches matching prefix
       if (element instanceof BranchGroupItem && element.group === "remote") {
         const remote = engine.workflow.remoteName;
-        try {
-          await engine.git.fetch(remote);
-        } catch {
-          // fetch may fail offline — still try listing cached remotes
-        }
+        await engine.git.fetch(remote).catch(() => {});
         const allRemote = await engine.git.listRemoteBranches(remote);
-        const matching = allRemote.filter((b) => b.startsWith(element.prefix));
-        // Skip ones that already have a local branch of the same name
         const type = engine.workflow.requireBranchType(element.typeName);
         const local = await engine.listBranchTypes(type);
         const localNames = new Set(local.map((b) => b.name));
-        const onlyRemote = matching.filter((b) => !localNames.has(b));
+        const onlyRemote = allRemote.filter(
+          (b) => b.startsWith(type.prefix) && !localNames.has(b),
+        );
 
-        // Remote group
         return onlyRemote.length > 0
           ? onlyRemote.map(
-              (name) =>
-                new BranchItem(name, false, true, element.typeName, true),
+              (name) => new BranchItem(name, false, true, type.name, true),
             )
-          : [new MessageItem("No remote-only branches")];
+          : [new MessageItem("No remote-only branches.")];
       }
 
       return [];
     } catch (error) {
       await showGitweError(error, this.outputChannel);
-      return [
-        new MessageItem("Failed to load — see the Gitwe output channel."),
-      ];
+      return [new MessageItem("Failed to load — see Gitwe output channel.")];
     }
   }
 }

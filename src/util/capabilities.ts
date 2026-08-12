@@ -2,11 +2,12 @@
  * Approximate branch-type capabilities until gitwe-ts exposes them on BranchType.
  * Driven by type name + whether the type has merge targets.
  */
+
 export interface BranchCapabilities {
   start: boolean;
   finish: boolean;
   publish: boolean;
-  pull: boolean; // update from base
+  pull: boolean;
   track: boolean;
   delete: boolean;
   checkout: boolean;
@@ -18,8 +19,6 @@ export function capabilitiesForType(
   hasTargets: boolean,
 ): BranchCapabilities {
   const name = typeName.toLowerCase();
-
-  // support / lts: long-lived, usually no finish into mainline the same way
   if (name === "support" || name === "lts") {
     return {
       start: true,
@@ -32,8 +31,6 @@ export function capabilitiesForType(
       rebase: true,
     };
   }
-
-  // types with no merge targets cannot meaningfully "finish"
   if (!hasTargets) {
     return {
       start: true,
@@ -46,8 +43,6 @@ export function capabilitiesForType(
       rebase: true,
     };
   }
-
-  // default topic branch (feature / release / hotfix / bugfix / …)
   return {
     start: true,
     finish: true,
@@ -60,13 +55,11 @@ export function capabilitiesForType(
   };
 }
 
-/** Build a contextValue that VS Code `when` clauses can match. */
 export function branchContextValue(
   caps: BranchCapabilities,
   isRemote: boolean,
 ): string {
   if (isRemote) return "gitweRemoteBranch";
-
   const flags: string[] = ["gitweBranch"];
   if (caps.finish) flags.push("canFinish");
   if (caps.publish) flags.push("canPublish");

@@ -38,15 +38,12 @@ export class GitweStatusBar {
 
       const workflow = engine.workflow.config.name;
       const short = branch ?? "detached";
-
-      // Resolve type for a subtle hint
-      let typeHint = "";
-      if (branch) {
-        const resolved = engine.workflow.resolveBranch(branch);
-        if (resolved) typeHint = resolved.type.name;
-      }
+      const typeHint = branch
+        ? ` _( ${engine.workflow.resolveBranch(branch)?.type.name ?? ""} )_`
+        : "";
 
       const dirty = clean ? "" : " •";
+
       this.item.text = `$(git-branch) ${short}${dirty}`;
       this.item.backgroundColor = clean
         ? undefined
@@ -55,11 +52,10 @@ export class GitweStatusBar {
       this.item.tooltip = new vscode.MarkdownString(
         [
           `**Gitwe** \`${workflow}\``,
-          ``,
-          `Branch: \`${short}\`${typeHint ? ` _( ${typeHint} )_` : ""}`,
+          `Branch: \`${short}\`${typeHint}`,
           `Working tree: ${clean ? "clean" : "**uncommitted changes**"}`,
+          `_Click to open menu · Shift+Alt+G_`,
           ``,
-          `_Click to open Gitwe menu_ · \`Shift+Alt+G\``,
         ].join("\n"),
       );
       this.item.show();
