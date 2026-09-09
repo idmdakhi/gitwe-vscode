@@ -62,10 +62,19 @@ npm run package   # vsce package -> .vsix
 
 ## Design notes
 
-The dashboard's visual style (dark developer-tool palette, JetBrains
-Mono for branch names, accessible contrast, no emoji-as-icons) follows the
-`ui-ux-pro-max` design-system guidance for coding tools, layered on top of
-VS Code's own theme variables so it still adapts to light themes.
+The dashboard was redesigned from scratch using **UI/UX Pro Max** design
+intelligence:
+
+- **Style:** Dark Mode (OLED) — high contrast, low white emission, eye-friendly
+- **Palette:** Developer-tool tokens (`#0F172A` bg, `#22C55E` accent, slate neutrals)
+- **Typography:** IBM Plex Sans (UI) + JetBrains Mono (branch names)
+- **Density:** Dashboard-oriented (compact cards, 8–12 px gaps)
+- **Motion:** Subtle fade-up stagger (respects `prefers-reduced-motion`)
+- **Icons:** Inline SVG (Lucide-style), never emoji
+- **Accessibility:** Visible focus rings, 4.5:1 contrast, keyboard-friendly buttons
+
+All colors layer on top of VS Code theme variables so the panel still
+blends into light themes instead of forcing dark mode.
 
 ## License
 

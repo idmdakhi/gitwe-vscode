@@ -2,7 +2,7 @@
   "name": "gitwe-vscode",
   "displayName": "gitwe — Git Workflow Engine",
   "description": "Run and visualize your gitwe branching workflow (start/finish/update/publish, topic-branch tree, health checks) right inside VS Code.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "gitwe",
   "license": "MIT",
   "repository": {
