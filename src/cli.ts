@@ -284,8 +284,8 @@ export interface GitweTypeDefinition {
   name: string;
   prefix: string;
   base: string;
-  target: string[];
-  aliases: string[];
+  target: string | string[] | null;
+  aliases: string[] | null;
 }
 
 export interface GitweTypesResult {

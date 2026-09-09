@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { GitweRepo, GitweCliError, GitweNotFoundError, GitweTypeDefinition } from "./cli";
 import { BranchNode } from "./branchesTreeProvider";
+import { formatTarget } from "./util";
 
 export interface CommandContext {
   getRepo: () => GitweRepo | undefined;
@@ -64,12 +65,16 @@ async function confirmDestructive(message: string): Promise<boolean> {
 }
 
 function branchQuickPickItems(types: GitweTypeDefinition[]): (vscode.QuickPickItem & { type: GitweTypeDefinition })[] {
-  return types.map((t) => ({
-    type: t,
-    label: `$(git-branch) ${t.name}`,
-    description: `${t.prefix}<name> → ${t.target.join(", ")}`,
-    detail: `base: ${t.base}${t.aliases.length ? `  ·  aliases: ${t.aliases.join(", ")}` : ""}`,
-  }));
+  return types.map((t) => {
+    const target = formatTarget(t.target);
+    const aliases = Array.isArray(t.aliases) ? t.aliases : [];
+    return {
+      type: t,
+      label: `$(git-branch) ${t.name}`,
+      description: `${t.prefix}<name> → ${target || "?"}`,
+      detail: `base: ${t.base}${aliases.length ? `  ·  aliases: ${aliases.join(", ")}` : ""}`,
+    };
+  });
 }
 
 export function registerCommands(context: vscode.ExtensionContext, cmdCtx: CommandContext): void {

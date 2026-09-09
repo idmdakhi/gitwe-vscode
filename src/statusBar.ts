@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { GitweRepo, GitweCliError, GitweNotFoundError } from "./cli";
+import { formatTarget } from "./util";
 
 export class GitweStatusBar implements vscode.Disposable {
   private readonly item: vscode.StatusBarItem;
@@ -36,7 +37,7 @@ export class GitweStatusBar implements vscode.Disposable {
         this.item.tooltip = "gitwe: not a configured topic branch — click to open the dashboard";
       } else {
         this.item.text = `$(git-branch) ${current.type}/${current.shortName}`;
-        const target = current.target?.join(", ") ?? "?";
+        const target = formatTarget(current.target) || "?";
         this.item.tooltip = new vscode.MarkdownString(
           `**gitwe** — \`${current.branch}\`\n\n` + `base: \`${current.base}\`  \ntarget: \`${target}\``,
         );
