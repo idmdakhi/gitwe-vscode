@@ -1,7 +1,10 @@
+.github/**
+.gitwe/**
 .vscode/**
+docs/**
+node_modules/**
 src/**
 out/**
-node_modules/**
 .gitignore
 tsconfig.json
 esbuild.js

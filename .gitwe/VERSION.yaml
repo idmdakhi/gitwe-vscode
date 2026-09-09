@@ -1,4 +1,4 @@
-# .gitwe/VERSION.yaml
+# .gitwe/version.yaml
 version: 0.3.0
 
 tagPrefix: v

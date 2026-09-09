@@ -1,570 +1,98 @@
-# نقشه راه / TODO — Gitwe VS Code Extension
+### Phase 1: Infrastructure & Design System (Priority: High ⚡)
 
-بله؛ و اتفاقاً ساختار فعلی **Gitwe** برای این کار خیلی مناسب است. بررسی فایل پروژه نشان می‌دهد که الان بخش قابل‌توجهی از قابلیت‌های `vscode-gitflow` را دارید، اما هنوز باید آن‌ها را به یک **GitFlow UI/UX کامل** تبدیل کنیم.
+_Establish the visual and technical foundation for all subsequent components._
 
-در پروژه فعلی شما، `start`، `finish`، `delete`، `checkout`، `pull`، `push`، graph، dashboard و مدیریت branch type وجود دارد. همچنین خود Engine عملیات `rebase`، `cherry-pick` و `stash` را هم expose کرده است.
+- [x] **1-1. Define Design Tokens**
+  - Define the color palette in `package.json` or a dedicated `theme.ts` file (Primary: `#0066B3`, Success: `#00A86B`, Warning: `#F5A623`, Dark BG: `#1E1E1E`, Light BG: `#FFFFFF`).
+  - Import and apply **Inter** (for UI text) and **JetBrains Mono** (for technical text/code) fonts in the WebView.
 
-از طرف دیگر، GitFlow استاندارد علاوه بر Start/Finish، عملیات‌هایی مثل **Publish / Pull / Track / Delete** را برای Feature/Release/Hotfix و Start برای Support تعریف می‌کند. ([GitHub][1])
+- [ ] **1-2. Implement Bento Grid Layout System**
+  - Create a flexible CSS Grid/Flexbox system for the dashboard that supports variable card sizes (1x, 2x, full-width) to organize information neatly.
 
-### پیشنهادم: کپی‌کردن vscode-gitflow نباشد
-
-بهتر است قابلیت‌های آن را به Gitwe اضافه کنیم، اما با معماری خود Gitwe:
-
-```text
-VS Code UI
-   │
-   ├── Command Palette
-   ├── Activity Bar
-   ├── Branch Context Menu
-   ├── Dashboard
-   └── Status Bar
-          │
-          ▼
-   Gitwe VSCode Adapter
-          │
-          ▼
-      Gitwe Engine
-          │
-    ┌─────┴─────┐
-    ▼           ▼
- Workflow      Git
- Rules         Operations
-```
-
-این با اصل فعلی پروژه هم سازگار است: Extension باید UI باشد و منطق عملیات در Engine بماند. خود README فعلی نیز همین معماری را صریحاً بیان کرده است.
-
-## قابلیت‌هایی که اضافه می‌کنیم
-
-### 1. Feature
-
-```text
-Gitwe: Feature
- ├── Start
- ├── Finish
- ├── Publish
- ├── Pull
- ├── Track
- ├── Delete
- └── Checkout
-```
-
-### 2. Release
-
-```text
-Gitwe: Release
- ├── Start
- ├── Finish
- ├── Publish
- ├── Pull
- ├── Track
- └── Delete
-```
-
-### 3. Hotfix
-
-```text
-Gitwe: Hotfix
- ├── Start
- ├── Finish
- ├── Publish
- ├── Pull
- ├── Track
- └── Delete
-```
-
-### 4. Support
-
-```text
-Gitwe: Support
- ├── Start
- ├── Checkout
- └── Delete
-```
-
-Support در git-flow معمولاً از production/master ایجاد می‌شود و برخلاف feature/release/hotfix الزاماً Finish معمولی ندارد. ([GitHub][1])
+- [ ] **1-3. Set Up Icon Library**
+  - Add a professional SVG icon library (**Heroicons** or **Lucide**) to the project. Replace all emojis with these icons across buttons, status indicators, and the sidebar.
 
 ---
 
-# مهم‌ترین تفاوت با نسخه فعلی
+### Phase 2: Sidebar Tree View Redesign (Priority: High ⚡)
 
-الان شما Commandهای عمومی دارید:
+_Enhance daily interaction and information density for branch management._
 
-```text
-Gitwe: Start Branch...
-Gitwe: Finish Branch...
-Gitwe: Delete Branch...
-Gitwe: Checkout Branch
-Gitwe: Pull
-Gitwe: Push
-```
+- [ ] **2-1. Visual Grouping of Branches**
+  - Add color-coded badges or small icons next to each branch name to visually distinguish types (e.g., `feature/*`, `release/*`, `hotfix/*`, `main`).
 
-که در `package.json` هم تعریف شده‌اند.
+- [ ] **2-2. Display Supplementary Info in Tree Nodes**
+  - Modify the TreeView provider to show the "last commit message" as a subtitle or muted text below each branch name.
+  - Add a divergence indicator (e.g., `↑2 ↓1`) to show how many commits the branch is ahead/behind the main branch.
 
-من پیشنهاد می‌کنم علاوه بر آن‌ها، Commandهای **context-aware** اضافه کنیم:
-
-```text
-Gitwe: Start Feature...
-Gitwe: Finish Feature
-Gitwe: Publish Feature
-Gitwe: Pull Feature
-Gitwe: Track Feature
-Gitwe: Delete Feature
-
-Gitwe: Start Release...
-Gitwe: Finish Release
-Gitwe: Publish Release
-Gitwe: Pull Release
-Gitwe: Track Release
-Gitwe: Delete Release
-
-Gitwe: Start Hotfix...
-Gitwe: Finish Hotfix
-Gitwe: Publish Hotfix
-Gitwe: Pull Hotfix
-Gitwe: Track Hotfix
-Gitwe: Delete Hotfix
-
-Gitwe: Start Support...
-Gitwe: Delete Support
-```
-
-اما **منطق این Commandها نباید در VS Code نوشته شود**.
+- [ ] **2-3. Enrich Context Menu (Right-Click)**
+  - Add new, high-frequency options to the right-click menu: "Compare with Main", "Show Log", and "Finish & Merge".
 
 ---
 
-# معماری پیشنهادی Engine
+### Phase 3: Dashboard WebView Redesign (Priority: Medium 🚀)
 
-در `gitwe-ts` بهتر است abstraction به این شکل باشد:
+_Create a modern, visually appealing command center._
 
-```ts
-interface BranchWorkflowService {
-  list(type: BranchType): Promise<BranchStatus[]>;
+- [ ] **3-1. Redesign Header & Quick Actions**
+  - Design an attractive header with the extension's text logo and large, prominent action buttons for `Start`, `Pull`, `Push`, and `Doctor` at the top, utilizing Lucide/Heroicons.
 
-  start(
-    type: BranchType,
-    name: string,
-    options?: StartOptions,
-  ): Promise<StartResult>;
+- [ ] **3-2. Implement Informational Cards (Bento Grid)**
+  - **Workflow Status Card**: Display the current repository state (Clean, WIP, Conflict) with accent colors and descriptive text.
+  - **Worktree Status Card**: List all active worktrees in a compact, scannable format.
+  - **Branch Rules Card**: Show configured rules per branch type clearly.
 
-  finish(
-    branch: ResolvedBranch,
-    options?: FinishOptions,
-  ): Promise<FinishResult>;
+- [ ] **3-3. Enhance the Git Graph Visualization**
+  - Upgrade the graph component with the new color palette and improved line thickness. Add a small legend to explain color meanings.
+  - Implement a smooth loading/updating animation when the graph refreshes.
 
-  delete(
-    branch: ResolvedBranch,
-    options?: DeleteOptions,
-  ): Promise<DeleteResult>;
-
-  publish(
-    branch: ResolvedBranch,
-    options?: PublishOptions,
-  ): Promise<PublishResult>;
-
-  pull(branch: ResolvedBranch, options?: PullOptions): Promise<PullResult>;
-
-  track(
-    type: BranchType,
-    name: string,
-    options?: TrackOptions,
-  ): Promise<TrackResult>;
-}
-```
-
-بعد:
-
-```text
-FeatureWorkflow
-ReleaseWorkflow
-HotfixWorkflow
-SupportWorkflow
-```
-
-ولی حتی بهتر از آن، چون Gitwe از ابتدا workflow-based است، **نباید کلاس‌های FeatureWorkflow/ReleaseWorkflow را hard-code کنیم**.
-
-یعنی:
-
-```text
-BranchType
-   │
-   ├── name
-   ├── aliases
-   ├── base
-   ├── target
-   ├── prefix
-   └── capabilities
-```
-
-مثلاً:
-
-```yaml
-branchTypes:
-  - name: feature
-    prefix: feature/
-    base: develop
-    target: develop
-
-    capabilities:
-      start: true
-      finish: true
-      publish: true
-      pull: true
-      track: true
-      delete: true
-```
-
-این خیلی مهم است، چون Gitwe فعلی فقط GitFlow نیست؛ presetهای `classic`، `github` و `gitlab` دارد.
+- [ ] **3-4. Implement Auto-Refresh**
+  - Ensure the dashboard data (graph, status, cards) updates automatically upon any Git event (commit, branch switch, push/pull) without requiring a manual refresh button click.
 
 ---
 
-# قابلیت‌های Branch
+### Phase 4: Status Bar Redesign (Priority: Medium 🚀)
 
-من حتی پیشنهاد می‌کنم یک مفهوم مرکزی به Engine اضافه کنیم:
+_Provide faster access to critical information and common actions._
 
-```ts
-type BranchCapability =
-  | "start"
-  | "finish"
-  | "publish"
-  | "pull"
-  | "track"
-  | "delete"
-  | "checkout"
-  | "merge"
-  | "rebase"
-  | "tag";
-```
+- [ ] **4-1. Replace Text with Visual Indicator**
+  - Replace the plain text status with a colored dot (Green 🟢 = Clean, Yellow 🟡 = Uncommitted changes, Red 🔴 = Conflict) accompanied by a short descriptive text (e.g., "Clean", "Changes", "Conflicts").
 
-و:
-
-```ts
-interface BranchCapabilities {
-  start: boolean;
-  finish: boolean;
-  publish: boolean;
-  pull: boolean;
-  track: boolean;
-  delete: boolean;
-  checkout: boolean;
-  merge: boolean;
-  rebase: boolean;
-  tag: boolean;
-}
-```
-
-آن‌وقت UI خودش از Workflow می‌فهمد چه کاری مجاز است.
+- [ ] **4-2. Add Quick-Pick Menu on Click**
+  - Implement a small Quick Pick menu that appears when clicking the status bar item, offering options like `Gitwe: Pull`, `Gitwe: Push`, and `Open Dashboard` for rapid execution.
 
 ---
 
-# UI جدید
+### Phase 5: Accessibility & Animations (Priority: Low but Essential ♿)
 
-در Sidebar فعلی شما branch type به صورت group نمایش داده می‌شود.
+_Finalize the user experience to be inclusive and polished._
 
-آن را تبدیل می‌کنیم به:
+- [ ] **5-1. Improve Keyboard Focus Visibility**
+  - Add explicit `:focus-visible` styles to all interactive elements (buttons, cards, tree nodes) so keyboard users can clearly navigate the interface.
 
-```text
-GITWE
-│
-├── MAIN
-│
-├── DEVELOP
-│
-├── FEATURE
-│   ├── feature/login
-│   ├── feature/payment
-│   └── feature/dashboard
-│
-├── RELEASE
-│   └── release/1.4.0
-│
-├── HOTFIX
-│   └── hotfix/1.3.1
-│
-└── SUPPORT
-    └── support/1.0
-```
+- [ ] **5-2. Enforce Color Contrast Standards**
+  - Audit all text/background combinations using contrast-checking tools. Ensure a minimum ratio of **4.5:1**, especially for the Light theme.
 
-و روی هر branch:
+- [ ] **5-3. Implement `prefers-reduced-motion`**
+  - Wrap all CSS animations and transitions inside `@media (prefers-reduced-motion: reduce)` to respect the user's OS motion settings.
 
-```text
-Right Click
-│
-├── Checkout
-├── Finish
-├── Publish
-├── Pull
-├── Track
-├── Delete
-├── Rebase
-├── Merge
-└── Open Graph
-```
-
-البته فقط capabilityهای مجاز نمایش داده شوند.
-
-VS Code برای همین نوع context menuها `view/item/context` و `when` clause دارد، بنابراین این UI کاملاً با مکانیزم native VS Code قابل پیاده‌سازی است. ([GitHub][2])
+- [ ] **5-4. Add ARIA Labels**
+  - Add appropriate `aria-label` attributes to all icon-only buttons and non-textual elements in both the WebView and the TreeView for screen reader compatibility.
 
 ---
 
-# Dashboard
+### Phase 6: Testing, Documentation & Release (Priority: Final ✅)
 
-Dashboard فعلی شما همین الان پایه خوبی دارد؛ داده‌هایی مثل workflow، current branch، working tree، base branches، branch types و health را نمایش می‌دهد.
+_Ensure quality assurance and prepare the final delivery._
 
-آن را به چیزی شبیه این تبدیل کنیم:
+- [ ] **6-1. Test on Light and Dark Themes**
+  - Thoroughly review the extension's UI appearance in both VS Code default themes (Light+ and Dark+) and fix any visual inconsistencies.
 
-```text
-┌───────────────────────────────────────────────┐
-│ Gitwe                         classic workflow │
-├───────────────────────────────────────────────┤
-│                                               │
-│ Current                                       │
-│ feature/payment                               │
-│                                               │
-│ ● Working tree clean                          │
-│                                               │
-├───────────────────────────────────────────────┤
-│ FEATURES                                      │
-│                                               │
-│ feature/payment       [Finish] [Publish]      │
-│ feature/login         [Checkout] [Delete]     │
-│                                               │
-├───────────────────────────────────────────────┤
-│ RELEASES                                      │
-│                                               │
-│ release/1.4.0         [Finish] [Publish]      │
-│                                               │
-├───────────────────────────────────────────────┤
-│ HOTFIXES                                      │
-│                                               │
-│ hotfix/1.3.1          [Finish] [Publish]      │
-│                                               │
-├───────────────────────────────────────────────┤
-│ QUICK ACTIONS                                 │
-│                                               │
-│ [+ Feature] [+ Release] [+ Hotfix]            │
-│ [Pull] [Push] [Refresh] [Graph]               │
-└───────────────────────────────────────────────┘
-```
+- [ ] **6-2. Performance Testing**
+  - Verify that opening the dashboard and rendering the Git graph does not cause noticeable lag or high CPU usage, especially for large repositories with complex histories.
 
-Dashboard فعلی نیز mutationها را به Commandهای VS Code delegate می‌کند، بنابراین همین الگو را حفظ می‌کنیم و منطق Git را وارد WebView نمی‌کنیم.
+- [ ] **6-3. Update Documentation**
+  - Update the project's `README.md` and Wiki with new screenshots of the redesigned interface. Add clear explanations for all new features introduced in this redesign.
 
----
-
-# یک قابلیت مهم‌تر: Remote Branch Management
-
-این قسمت به نظرم برای Gitwe بسیار مهم است.
-
-مثلاً:
-
-```text
-FEATURE
-│
-├── Local
-│   └── feature/login
-│
-└── Remote
-    ├── origin/feature/payment
-    └── origin/feature/profile
-```
-
-و برای remote branch:
-
-```text
-Track
-Checkout
-Pull
-Delete Remote
-```
-
-این دقیقاً یکی از قابلیت‌های GitFlow استاندارد است؛ `publish` و `track` برای share کردن feature/release/hotfix branchها تعریف شده‌اند. ([GitHub][3])
-
----
-
-# همچنین باید Finish را حرفه‌ای‌تر کنیم
-
-نسخه فعلی شما هنگام Finish فقط چند option می‌گیرد:
-
-```text
-Delete after finish?
-Push to remote?
-```
-
-و سپس:
-
-```ts
-client.finishBranch(branchName, deleteAfter, push);
-```
-
-ما باید آن را به Workflow-aware Finish تبدیل کنیم:
-
-```text
-Finish release/1.4.0
-
-Target branches:
- ☑ main
- ☑ develop
-
-Merge strategy:
- ○ merge
- ○ no-ff
- ○ squash
-
-Create tag:
- ☑ yes
-
-Tag:
- v1.4.0
-
-Push:
- ☑ main
- ☑ develop
- ☑ tag
-
-Delete local:
- ☑
-
-Delete remote:
- ☑
-
-             [Cancel] [Finish]
-```
-
-این با معماری فعلی Versioning شما هم بسیار خوب جور درمی‌آید، چون Gitwe الان tag/version bump را در Engine انجام می‌دهد و نتیجه Finish هم tag را برمی‌گرداند. در extension فعلی نیز `result.tag` مصرف می‌شود.
-
----
-
-# در نتیجه Roadmap من این است
-
-### Phase 1 — GitFlow parity
-
-```text
-Start
-Finish
-Delete
-Publish
-Pull
-Track
-
-Feature
-Release
-Hotfix
-Support
-```
-
-### Phase 2 — UI
-
-```text
-Branch Context Menu
-Type Context Menu
-Remote Branches
-Quick Actions
-Dashboard Actions
-```
-
-### Phase 3 — Advanced GitFlow
-
-```text
-Base selection
-Target selection
-Merge strategy
-Squash
-No-FF
-Tag
-Version bump
-Changelog
-Push
-Remote delete
-```
-
-### Phase 4 — Workflow Engine
-
-```text
-BranchCapabilities
-WorkflowPolicies
-OperationPreconditions
-OperationPlan
-OperationResult
-```
-
-مثلاً:
-
-```ts
-const plan = workflow.plan("finish", branch);
-
-for (const step of plan.steps) {
-  await step.execute(context);
-}
-```
-
-که با کاری که اخیراً روی **Workflow-based implementation** و Stepهای `Preflight → Fetch → Rebase → Merge → VersionBump → Tag → Push → Delete...` انجام داده‌ایم، کاملاً هم‌راستا است.
-
-### Phase 5 — تجربه‌ای فراتر از vscode-gitflow
-
-در نهایت Gitwe فقط یک GitFlow UI نباشد:
-
-```text
-                   Gitwe
-                     │
-          ┌──────────┼──────────┐
-          │          │          │
-       Classic    GitHub     GitLab
-       GitFlow     Flow       Flow
-          │
-     Custom Workflow
-          │
-     ┌────┴────┐
-     │         │
- Branches   Policies
-     │         │
-     └────┬────┘
-          │
-      Workflow Engine
-```
-
-این همان جایی است که Gitwe می‌تواند از `vscode-gitflow` جلو بزند: **vscode-gitflow را به عنوان UX مرجع می‌گیریم، نه معماری.**
-
-اگر موافقی، قدم بعدی را از **Phase 1** شروع کنیم و دقیقاً `Publish / Pull / Track / Delete` را به Engine و بعد VS Code اضافه کنیم؛ اول interfaceها و مدل‌های domain، بعد handlerها، بعد commandها و در آخر Sidebar/Dashboard.
-
-[1]: https://github.com/nvie/gitflow?utm_source=chatgpt.com "GitHub - nvie/gitflow: Git extensions to provide high-level repository operations for Vincent Driessen's branching model. · GitHub"
-[2]: https://github.com/microsoft/vscode-docs/blob/main/api/references/contribution-points.md?utm_source=chatgpt.com "vscode-docs/api/references/contribution-points.md at main · microsoft/vscode-docs · GitHub"
-[3]: https://github.com/petervanderdoes/gitflow-avh?utm_source=chatgpt.com "GitHub - petervanderdoes/gitflow-avh: AVH Edition of the git extensions to provide high-level repository operations for Vincent Driessen's branching model · GitHub"
-
----
-
-قابلیت‌هایی که پیشنهاد می‌کنم اضافه شوند (اولویت‌بندی)
-فاز ۱ — اولویت بالا (نزدیک‌ترین به تجربهٔ vscode-gitflow)
-
-Rebase branch روی base
-Publish branch (push + -u)
-Track remote branch
-Quick Pick منو با کلید میانبر (مثلاً Shift+Alt+G یا مشابه)
-Checkout base branches (main / develop / …)
-Fetch و Sync root branches
-
-فاز ۲
-
-مدیریت Tag (لیست، push، delete local/remote)
-دستور Init داخل اکستنشن (نوشتن .gitwe/gitwe.yaml یا preset)
-بهبود Status Bar + منوی contextual روی branch فعلی
-
-فاز ۳ (اختیاری / پیشرفته)
-
-Auto-bump package.json هنگام start/finish release/hotfix (علاوه بر versioning خود gitwe)
-Auto-update CHANGELOG.md
-View جدا در SCM برای Versions/Tags
-
-UX پوشش داده شده:
-
-Publish / Track / Update / Rebase
-Local + Remote tree
-Finish wizard پایه
-Capability-aware menus
-Tags از sidebar
-Dashboard غنی‌تر
-Start با type از پیش‌انتخاب‌شده
-
-قدم‌های باقی‌ماندهٔ سنگین‌تر (نیاز به Engine):
-
-capabilities واقعی روی BranchType در gitwe-ts
-Finish با انتخاب strategy / multi-target از API
-Delete remote به‌صورت first-class
+- [ ] **6-4. Create Pull Request for the `new` Branch**
+  - Merge all changes into the `new` branch locally, push, and open a Pull Request to the main repository for final code review and merge.
