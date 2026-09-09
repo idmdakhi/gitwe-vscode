@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import { formatTarget } from "./util";
+
 import {
   GitweRepo,
   GitweCliError,
@@ -447,7 +449,7 @@ export class GitweDashboardPanel {
       card.innerHTML =
         '<span class="icon" aria-hidden="true" style="color:var(--gw-type-color)">' + ICONS.gitBranch + '</span>' +
         '<div class="value">' + t.count + '</div>' +
-        '<div class="label branch-name">' + t.type + ' \u2192 ' + t.target.join(', ') + '</div>';
+        '<div class="label branch-name">' + t.type + ' \u2192 ' + formatTarget(t.target) + '</div>';
       grid.appendChild(card);
     }
   }
