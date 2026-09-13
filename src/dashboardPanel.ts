@@ -1,6 +1,4 @@
 import * as vscode from "vscode";
-import { formatTarget } from "./util";
-
 import {
   GitweRepo,
   GitweCliError,
@@ -220,7 +218,6 @@ export class GitweDashboardPanel {
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ---------- Typography ---------- */
   h1 {
     font-size: 17px;
     font-weight: 700;
@@ -242,7 +239,6 @@ export class GitweDashboardPanel {
 
   .branch-name { font-family: var(--gw-font-mono); font-size: 12.5px; }
 
-  /* ---------- Icons ---------- */
   .icon {
     width: 14px;
     height: 14px;
@@ -253,7 +249,6 @@ export class GitweDashboardPanel {
   }
   .icon svg { width: 100%; height: 100%; display: block; }
 
-  /* ---------- Header ---------- */
   header {
     display: flex;
     align-items: flex-start;
@@ -290,7 +285,6 @@ export class GitweDashboardPanel {
     align-items: center;
   }
 
-  /* ---------- Buttons ---------- */
   button {
     font-family: inherit;
     font-size: 12px;
@@ -348,7 +342,6 @@ export class GitweDashboardPanel {
   }
   @keyframes gw-spin { to { transform: rotate(360deg); } }
 
-  /* ---------- Grid & Cards ---------- */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -415,7 +408,6 @@ export class GitweDashboardPanel {
     font-size: 11.5px;
   }
 
-  /* ---------- Sections ---------- */
   section {
     margin-bottom: var(--gw-space-8);
     animation: gw-fade-up var(--gw-t-slow) var(--gw-ease-out) both;
@@ -429,7 +421,6 @@ export class GitweDashboardPanel {
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ---------- Doctor findings ---------- */
   .finding {
     display: flex;
     align-items: flex-start;
@@ -465,7 +456,6 @@ export class GitweDashboardPanel {
     font-size: 13px;
   }
 
-  /* ---------- Branch list ---------- */
   ul.branch-list {
     list-style: none;
     margin: 0;
@@ -520,7 +510,6 @@ export class GitweDashboardPanel {
     .row-actions { opacity: 1; pointer-events: auto; }
   }
 
-  /* ---------- Empty state ---------- */
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -540,7 +529,6 @@ export class GitweDashboardPanel {
   }
   .empty-state .hint { font-size: 12px; opacity: 0.85; }
 
-  /* ---------- Skeleton ---------- */
   .skel {
     border-radius: var(--gw-radius-sm);
     background: linear-gradient(
@@ -559,7 +547,6 @@ export class GitweDashboardPanel {
   .skel-card { height: 72px; }
   .skel-row  { height: 32px; margin-bottom: var(--gw-space-2); }
 
-  /* ---------- Banner ---------- */
   .banner {
     display: flex;
     align-items: center;
@@ -716,8 +703,16 @@ export class GitweDashboardPanel {
     $('#banner').classList.add('hidden');
   }
 
+  // Inlined because webview JS cannot call the TS util.
+  function formatTarget(target) {
+    if (Array.isArray(target)) return target.join(', ');
+    if (typeof target === 'string') return target;
+    return '';
+  }
+
   function renderOverview(overview) {
-    $('#workflow-name').textContent = 'gitwe — ' + overview.workflowName;
+    overview = overview || {};
+    $('#workflow-name').textContent = 'gitwe — ' + (overview.workflowName || 'workflow');
 
     const branchEl = $('#current-branch');
     if (overview.currentBranch) {
@@ -737,15 +732,18 @@ export class GitweDashboardPanel {
     grid.setAttribute('aria-busy', 'false');
     grid.innerHTML = '';
 
+    const baseBranches = Array.isArray(overview.baseBranches) ? overview.baseBranches : [];
+    const branchTypes = Array.isArray(overview.branchTypes) ? overview.branchTypes : [];
+
     const baseCard = document.createElement('div');
     baseCard.className = 'card stat-card';
     baseCard.innerHTML =
       '<span class="icon" aria-hidden="true">' + ICONS.hash + '</span>' +
-      '<div class="value">' + overview.baseBranches.length + '</div>' +
+      '<div class="value">' + baseBranches.length + '</div>' +
       '<div class="label">Base branches</div>';
     grid.appendChild(baseCard);
 
-    for (const t of overview.branchTypes) {
+    for (const t of branchTypes) {
       const card = document.createElement('div');
       card.className = 'card stat-card';
       card.style.setProperty('--gw-type-color', typeColor(t.type));
@@ -763,8 +761,9 @@ export class GitweDashboardPanel {
     const card = $('#doctor-card');
     card.setAttribute('aria-busy', 'false');
     card.innerHTML = '';
+    const findings = (doctor && Array.isArray(doctor.findings)) ? doctor.findings : [];
 
-    if (!doctor.findings.length) {
+    if (!findings.length) {
       card.innerHTML =
         '<div class="doctor-ok">' +
         '<span class="icon" aria-hidden="true">' + ICONS.checkCircle + '</span>' +
@@ -773,7 +772,7 @@ export class GitweDashboardPanel {
       return;
     }
 
-    for (const f of doctor.findings) {
+    for (const f of findings) {
       const row = document.createElement('div');
       row.className = 'finding ' + f.severity;
       row.innerHTML =
@@ -788,8 +787,9 @@ export class GitweDashboardPanel {
     const ul = $('#branch-list');
     ul.setAttribute('aria-busy', 'false');
     ul.innerHTML = '';
+    const branches = (list && Array.isArray(list.branches)) ? list.branches : [];
 
-    if (!list.branches.length) {
+    if (!branches.length) {
       const li = document.createElement('li');
       li.innerHTML =
         '<div class="empty-state" style="width:100%">' +
@@ -801,7 +801,7 @@ export class GitweDashboardPanel {
       return;
     }
 
-    list.branches.forEach((b, i) => {
+    branches.forEach((b, i) => {
       const li = document.createElement('li');
       li.style.animationDelay = Math.min(i * 28, 220) + 'ms';
 
@@ -854,9 +854,9 @@ export class GitweDashboardPanel {
     switch (msg.type) {
       case 'data':
         hideBanner();
-        renderOverview(msg.overview);
-        renderDoctor(msg.doctor);
-        renderBranches(msg.list, msg.overview?.currentBranch);
+        try { renderOverview(msg.overview || {}); } catch (e) { console.error('overview', e); }
+        try { renderDoctor(msg.doctor || {}); } catch (e) { console.error('doctor', e); }
+        try { renderBranches(msg.list || {}, (msg.overview && msg.overview.currentBranch) || null); } catch (e) { console.error('branches', e); }
         break;
       case 'notInstalled':
         showBanner('gitwe is not installed: ' + msg.message, true);
