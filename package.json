@@ -324,8 +324,10 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run build",
-    "build": "npm run clean && node esbuild.js --production",
+    "vscode:prepublish": "npm run clean && npm run build",
+    "build": "node esbuild.js --production",
+    "clean": "rm -rf dist/ && rm -rf out/",
+    "check-types": "tsc -p ./ --noEmit",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit -p ./",
     "package": "vsce package",

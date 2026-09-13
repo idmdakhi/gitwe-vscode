@@ -677,6 +677,17 @@ export class GitweDashboardPanel {
          : ICONS.check;
   }
 
+
+ function toString(
+  target,
+  delimiter= ", ",
+) {
+  if (Array.isArray(target)) return target.join(delimiter);
+  if (typeof target === "string") return target;
+  return "";
+}
+
+
   document.querySelectorAll('button[data-cmd]').forEach((btn) => {
     btn.addEventListener('click', () =>
       vscode.postMessage({ type: 'runCommand', command: btn.dataset.cmd })
@@ -751,8 +762,7 @@ export class GitweDashboardPanel {
         '<span class="icon" aria-hidden="true" style="color:var(--gw-type-color)">' +
         ICONS.gitBranch + '</span>' +
         '<div class="value">' + t.count + '</div>' +
-        '<div class="label branch-name">' + t.type + ' → ' +
-        formatTarget(t.target) + '</div>';
+        '<div class="label branch-name">' + t.type + ' \u2192 ' + toString(t.target) + '</div>';
       grid.appendChild(card);
     }
   }
