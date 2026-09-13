@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.2.2
+
+- **Base branches in the Topic Branches view.** A "Base Branches" group
+  now appears at the top of the tree, listing every base branch from the
+  workflow definition (`main`, `develop`, ...), with the current one
+  marked "current". Each row gets two hover icons — **Checkout**
+  (`$(arrow-right)`) and **Pull** (`$(cloud-download)`, which checks the
+  branch out first if it isn't already current) — also available from the
+  right-click context menu.
+- **Fixed the `npx` fallback.** It called plain `npx gitwe`, but the
+  unscoped `gitwe` package is not actually published on npm (confirmed
+  against the registry — 404). It now calls `npx gitwe-ts`, matching the
+  install instructions already in this file and the error message shown
+  when `gitwe` can't be found.
+- Added a Troubleshooting section to the README for two errors people hit
+  when `gitwe` itself, not the extension, is out of sync:
+  `[CONFIG] remote.name is required` (pre-0.40 `gitwe`, needs an upgrade —
+  `remote.name` was renamed to `remote.default`) and
+  `Repository is not initialised with gitwe` (missing `.gitwe/gitwe.yaml`
+  — run `gitwe init`).
+
 ## 0.2.1
 
 - **Sync with gitwe 0.40.x**

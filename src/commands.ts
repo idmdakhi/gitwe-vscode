@@ -5,7 +5,7 @@ import {
   GitweNotFoundError,
   GitweTypeDefinition,
 } from "./cli";
-import { BranchNode } from "./branchesTreeProvider";
+import { BranchNode, BaseBranchNode } from "./branchesTreeProvider";
 import { toArray } from "./util";
 
 export interface CommandContext {
@@ -404,6 +404,23 @@ export function registerCommands(
     vscode.commands.registerCommand(
       "gitwe.branch.delete",
       async (node: BranchNode) => deleteBranch(cmdCtx, node.branch.branch),
+    ),
+
+    // ---- Tree view item actions: base branches ----------------------------------
+    vscode.commands.registerCommand(
+      "gitwe.baseBranch.checkout",
+      async (node: BaseBranchNode) => {
+        await withRepo(cmdCtx, (repo) => repo.checkout(node.name));
+      },
+    ),
+    vscode.commands.registerCommand(
+      "gitwe.baseBranch.pull",
+      async (node: BaseBranchNode) => {
+        await withRepo(cmdCtx, async (repo) => {
+          if (!node.isCurrent) await repo.checkout(node.name);
+          return repo.pull();
+        });
+      },
     ),
   );
 

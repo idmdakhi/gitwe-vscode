@@ -77,13 +77,14 @@ export async function resolveGitweBinary(
     config().get<boolean>("useNpxFallback", true) &&
     (await commandExists("npx", cwd))
   ) {
-    cachedBinary = { command: "npx", prefixArgs: ["--yes", "gitwe"] };
+    cachedBinary = { command: "npx", prefixArgs: ["--yes", "gitwe-ts"] };
     return cachedBinary;
   }
 
   throw new GitweNotFoundError(
     "Could not find the `gitwe` executable on PATH, and no `gitwe.binaryPath` is configured. " +
-      "Install it with `npm install -g gitwe-ts` (or `@idmdakhi/gitwe`), or set `gitwe.binaryPath` in Settings.",
+      "Install it with `npm install -g gitwe-ts` (or the scoped `npm install -g @idmdakhi/gitwe`), " +
+      "or set `gitwe.binaryPath` in Settings.",
   );
 }
 

@@ -36,7 +36,10 @@ you couldn't reproduce yourself on the command line.
   # OR
   npm install -g @idmdakhi/gitwe
   ```
-  (or leave it uninstalled and let the extension fall back to `npx gitwe`).
+  Both publish the same `gitwe` binary (the unscoped `gitwe` package name
+  is not actually published on npm, despite what the project's own README
+  says — verified against the registry). Or leave it uninstalled and let
+  the extension fall back to `npx gitwe-ts`.
 - A repository with a workflow definition (`.gitwe/gitwe.yaml`) — the
   Topic Branches view offers to run `gitwe init` if one isn't found.
 - Node.js ≥ 20 and `git` on `PATH` (gitwe's own requirements).
@@ -51,6 +54,19 @@ you couldn't reproduce yourself on the command line.
 | `gitwe.confirmDestructiveActions` | `true`  | Confirm before delete / force-finish / abort.    |
 | `gitwe.statusBar.enabled`         | `true`  | Show the current topic branch in the status bar. |
 | `gitwe.runInTerminal`             | `false` | Reserved for a future terminal-transcript mode.  |
+
+## Troubleshooting
+
+- **`[CONFIG] remote.name is required`** — you have a pre-0.40 `gitwe`
+  installed. Older versions expected `remote.name` in the workflow
+  definition; 0.40+ renamed that field to `remote.default`. Run
+  `npm install -g gitwe-ts@latest` (or `@idmdakhi/gitwe@latest`) and check
+  with `gitwe --version` that it reports `0.40.x` or newer.
+- **`Repository is not initialised with gitwe`** — there's no
+  `.gitwe/gitwe.yaml` in the current workspace folder yet. Run
+  `gitwe init --preset classic` (or `github`/`gitlab`), or use
+  `Gitwe: Init Workflow…` from the Command Palette / the "Initialize
+  gitwe" link in the empty Topic Branches view.
 
 ## Development
 
