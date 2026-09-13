@@ -331,7 +331,7 @@ export interface GitweCurrentResult {
 export interface GitweBranchTypeSummary {
   type: string;
   base: string;
-  target: string | string[] | null;
+  target: string[];
   count: number;
 }
 
