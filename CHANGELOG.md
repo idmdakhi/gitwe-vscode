@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.5
+
+- **Dashboard toolbar now matches the Activity Bar toolbar.** Added a
+  "Sync all" button next to "Sync", plus a "More actions" dropdown
+  (kebab icon, top right of the header) covering everything else: Checkout,
+  Track, Update Current, Pull, Publish Current, Rename Current,
+  Delete Current, Validate Workflow, Rebase, Abort, Create Tag, Show
+  Branch Graph, Show Workflow Log. Closes on outside click, Escape, or
+  after picking an item. Answers "is this on both the Activity Bar and
+  the dashboard" - previously it was Activity Bar only.
+
+## 0.2.4
+
+- **New command: Sync All Topic Branches** (`gitwe.syncAll`, runs
+  `gitwe sync --all`). Icon: repo-sync.
+- **Topic Branches view now has a full toolbar.** Inline icons for Start,
+  Sync, Sync All, Doctor, Open Dashboard, Refresh. Everything else the CLI
+  supports is one click away in the "..." overflow menu, grouped as:
+  - Workflow: Checkout, Track, Update Current, Pull, Publish Current,
+    Finish Current, Rename Current, Delete Current
+  - Maintenance: Doctor --fix, Validate Workflow, Rebase, Abort,
+    Create Tag
+  - Insights: Show Branch Graph, Show Workflow Log
+    None of this needed new commands (they already existed for the Command
+    Palette) except Sync All; this just surfaces them in the view toolbar
+    too so you don't have to reach for the Command Palette.
+
+## 0.2.3
+
+- Redesigned the Overview cards in the dashboard webview to be more
+  compact: icon moved into a small rounded swatch next to the number
+  instead of stacked above it, smaller value/label text, tighter padding,
+  and a narrower minimum column width so more cards fit per row.
+
 ## 0.2.2
 
 - **Base branches in the Topic Branches view.** A "Base Branches" group

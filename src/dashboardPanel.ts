@@ -342,10 +342,60 @@ export class GitweDashboardPanel {
   }
   @keyframes gw-spin { to { transform: rotate(360deg); } }
 
+  .dropdown {
+    position: relative;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background: var(--gw-card);
+    border: 1px solid var(--gw-border);
+    border-radius: var(--gw-radius);
+    box-shadow: var(--gw-shadow-lg, 0 8px 24px -4px rgba(0,0,0,0.35));
+    padding: var(--gw-space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 20;
+  }
+  .dropdown-menu[hidden] { display: none; }
+  .dropdown-menu .menu-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gw-muted-fg);
+    padding: 6px 10px 2px;
+  }
+  .dropdown-menu .menu-sep {
+    height: 1px;
+    background: var(--gw-border);
+    margin: 4px 2px;
+  }
+  .dropdown-menu button {
+    width: 100%;
+    justify-content: flex-start;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 7px 10px;
+    font-weight: 500;
+  }
+  .dropdown-menu button:hover {
+    background: var(--gw-accent-muted);
+    border-color: transparent;
+    transform: none;
+  }
+  .dropdown-menu button.danger:hover {
+    background: color-mix(in srgb, var(--gw-destructive) 14%, transparent);
+    color: var(--gw-destructive);
+  }
+
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: var(--gw-space-3);
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: var(--gw-space-2);
     margin-bottom: var(--gw-space-6);
   }
 
@@ -367,6 +417,10 @@ export class GitweDashboardPanel {
   .stat-card {
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 11px;
   }
   .stat-card::before {
     content: "";
@@ -380,32 +434,50 @@ export class GitweDashboardPanel {
   .stat-card:hover {
     border-color: color-mix(in srgb, var(--gw-type-color, var(--gw-accent)) 55%, var(--gw-border));
     box-shadow: var(--gw-shadow-accent);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     background: var(--gw-card-hover);
   }
   .stat-card:hover::before { opacity: 1; }
+  .stat-card .icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--gw-radius-xs);
+    background: color-mix(in srgb, var(--gw-type-color, var(--gw-accent)) 14%, transparent);
+  }
   .stat-card .icon {
     color: var(--gw-type-color, var(--gw-accent));
-    width: 16px;
-    height: 16px;
-    margin-bottom: var(--gw-space-2);
+    width: 13px;
+    height: 13px;
+    margin: 0;
+  }
+  .stat-card .stat-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
   .stat-card .value {
-    font-size: 24px;
+    font-size: 17px;
     font-weight: 700;
     font-family: var(--gw-font-mono);
-    line-height: 1.1;
+    line-height: 1.15;
     letter-spacing: -0.02em;
   }
   .stat-card .label {
     color: var(--gw-muted-fg);
-    font-size: 11px;
-    margin-top: 5px;
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .stat-card .label.branch-name {
     text-transform: none;
     letter-spacing: 0;
-    font-size: 11.5px;
+    font-size: 11px;
   }
 
   section {
@@ -544,7 +616,7 @@ export class GitweDashboardPanel {
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
-  .skel-card { height: 72px; }
+  .skel-card { height: 46px; }
   .skel-row  { height: 32px; margin-bottom: var(--gw-space-2); }
 
   .banner {
@@ -594,10 +666,39 @@ export class GitweDashboardPanel {
         <span class="icon" aria-hidden="true">${GitweDashboardPanel.ICONS.sync}</span>
         Sync
       </button>
+      <button data-cmd="gitwe.syncAll">
+        <span class="icon" aria-hidden="true">${GitweDashboardPanel.ICONS.sync}</span>
+        Sync all
+      </button>
       <button data-cmd="gitwe.doctorFix">
         <span class="icon" aria-hidden="true">${GitweDashboardPanel.ICONS.wrench}</span>
         Doctor --fix
       </button>
+      <div class="dropdown">
+        <button id="more-actions-btn" class="icon-btn" title="More actions" aria-label="More actions" aria-haspopup="true" aria-expanded="false">
+          <span class="icon" aria-hidden="true">${GitweDashboardPanel.ICONS.moreHorizontal}</span>
+        </button>
+        <div class="dropdown-menu" id="more-actions-menu" role="menu" hidden>
+          <div class="menu-label">Workflow</div>
+          <button data-cmd="gitwe.checkout" role="menuitem">Checkout branch…</button>
+          <button data-cmd="gitwe.track" role="menuitem">Track remote branch…</button>
+          <button data-cmd="gitwe.updateCurrent" role="menuitem">Update current</button>
+          <button data-cmd="gitwe.pull" role="menuitem">Pull current</button>
+          <button data-cmd="gitwe.publishCurrent" role="menuitem">Publish current</button>
+          <button data-cmd="gitwe.rename" role="menuitem">Rename current…</button>
+          <button data-cmd="gitwe.deleteCurrent" class="danger" role="menuitem">Delete current…</button>
+          <div class="menu-sep"></div>
+          <div class="menu-label">Maintenance</div>
+          <button data-cmd="gitwe.validate" role="menuitem">Validate workflow</button>
+          <button data-cmd="gitwe.rebase" role="menuitem">Rebase current</button>
+          <button data-cmd="gitwe.abort" role="menuitem">Abort in-progress finish</button>
+          <button data-cmd="gitwe.tag" role="menuitem">Create tag…</button>
+          <div class="menu-sep"></div>
+          <div class="menu-label">Insights</div>
+          <button data-cmd="gitwe.graph" role="menuitem">Show branch graph</button>
+          <button data-cmd="gitwe.log" role="menuitem">Show workflow log</button>
+        </div>
+      </div>
       <button id="refresh-btn" class="icon-btn" title="Refresh" aria-label="Refresh">
         <span class="icon" aria-hidden="true">${GitweDashboardPanel.ICONS.refresh}</span>
       </button>
@@ -694,6 +795,38 @@ export class GitweDashboardPanel {
     );
   });
 
+  (function setupMoreActionsMenu() {
+    const toggleBtn = $('#more-actions-btn');
+    const menu = $('#more-actions-menu');
+    if (!toggleBtn || !menu) return;
+
+    function closeMenu() {
+      menu.hidden = true;
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    function openMenu() {
+      menu.hidden = false;
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (menu.hidden) openMenu(); else closeMenu();
+    });
+    menu.addEventListener('click', (e) => {
+      if (e.target.closest('button[data-cmd]')) closeMenu();
+    });
+    document.addEventListener('click', (e) => {
+      if (!menu.hidden && !menu.contains(e.target) && e.target !== toggleBtn) closeMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !menu.hidden) {
+        closeMenu();
+        toggleBtn.focus();
+      }
+    });
+  })();
+
   $('#refresh-btn').addEventListener('click', () => {
     $('#refresh-btn').classList.add('spinning');
     setTimeout(() => $('#refresh-btn').classList.remove('spinning'), 650);
@@ -749,20 +882,24 @@ export class GitweDashboardPanel {
     const baseCard = document.createElement('div');
     baseCard.className = 'card stat-card';
     baseCard.innerHTML =
-      '<span class="icon" aria-hidden="true">' + ICONS.hash + '</span>' +
+      '<span class="icon-wrap"><span class="icon" aria-hidden="true">' + ICONS.hash + '</span></span>' +
+      '<div class="stat-text">' +
       '<div class="value">' + baseBranches.length + '</div>' +
-      '<div class="label">Base branches</div>';
+      '<div class="label">Base branches</div>' +
+      '</div>';
     grid.appendChild(baseCard);
 
     for (const t of branchTypes) {
       const card = document.createElement('div');
       card.className = 'card stat-card';
       card.style.setProperty('--gw-type-color', typeColor(t.type));
+      card.title = t.type + ' \u2192 ' + toString(t.target);
       card.innerHTML =
-        '<span class="icon" aria-hidden="true" style="color:var(--gw-type-color)">' +
-        ICONS.gitBranch + '</span>' +
+        '<span class="icon-wrap"><span class="icon" aria-hidden="true">' + ICONS.gitBranch + '</span></span>' +
+        '<div class="stat-text">' +
         '<div class="value">' + t.count + '</div>' +
-        '<div class="label branch-name">' + t.type + ' \u2192 ' + toString(t.target) + '</div>';
+        '<div class="label branch-name">' + t.type + ' \u2192 ' + toString(t.target) + '</div>' +
+        '</div>';
       grid.appendChild(card);
     }
   }
@@ -893,6 +1030,8 @@ export class GitweDashboardPanel {
   private static readonly ICONS = {
     gitBranch:
       '<svg viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M104 40a24 24 0 1 0-32 22.6v50.8a24 24 0 0 0 0 45.2v9.4a24 24 0 0 0 24 24h40a8 8 0 0 0 8-8v-9.4a24 24 0 1 0-16 0V184h-32a8 8 0 0 1-8-8v-9.4a24 24 0 0 0 0-45.2V62.6A24 24 0 0 0 104 40Zm64 152a8 8 0 1 1-8-8 8 8 0 0 1 8 8ZM72 40a8 8 0 1 1-8 8 8 8 0 0 1 8-8Zm0 96a8 8 0 1 1-8 8 8 8 0 0 1 8-8Z" fill="currentColor"/></svg>',
+    moreHorizontal:
+      '<svg viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="128" r="16" fill="currentColor"/><circle cx="128" cy="128" r="16" fill="currentColor"/><circle cx="196" cy="128" r="16" fill="currentColor"/></svg>',
     check:
       '<svg viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="m226.8 74.8-133.5 133.5a8 8 0 0 1-11.3 0l-52.8-52.8a8 8 0 0 1 11.3-11.3l47.1 47.1L215.5 63.5a8 8 0 1 1 11.3 11.3Z" fill="currentColor"/></svg>',
     checkCircle:

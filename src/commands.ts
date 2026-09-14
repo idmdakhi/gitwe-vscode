@@ -200,6 +200,10 @@ export function registerCommands(
       await withRepo(cmdCtx, (repo) => repo.sync());
     }),
 
+    vscode.commands.registerCommand("gitwe.syncAll", async () => {
+      await withRepo(cmdCtx, (repo) => repo.sync(["--all"]));
+    }),
+
     vscode.commands.registerCommand("gitwe.pull", async () => {
       await withRepo(cmdCtx, (repo) => repo.pull());
     }),

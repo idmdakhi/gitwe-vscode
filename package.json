@@ -2,7 +2,7 @@
   "name": "gitwe-vsce",
   "displayName": "gitwe » Git Workflow Engine",
   "description": "Run and visualize your gitwe branching workflow (start/finish/update/publish, topic-branch tree, health checks) right inside VS Code.",
-  "version": "0.2.2",
+  "version": "0.2.5",
   "publisher": "idmdakhi",
   "license": "MIT",
   "repository": {
@@ -88,6 +88,12 @@
         "title": "Sync Current Branch",
         "category": "gitwe",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "gitwe.syncAll",
+        "title": "Sync All Topic Branches",
+        "category": "gitwe",
+        "icon": "$(repo-sync)"
       },
       {
         "command": "gitwe.pull",
@@ -250,19 +256,109 @@
     "menus": {
       "view/title": [
         {
-          "command": "gitwe.refreshBranches",
+          "command": "gitwe.start",
           "when": "view == gitwe.branches",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "gitwe.sync",
+          "when": "view == gitwe.branches",
+          "group": "navigation@2"
+        },
+        {
+          "command": "gitwe.syncAll",
+          "when": "view == gitwe.branches",
+          "group": "navigation@3"
+        },
+        {
+          "command": "gitwe.doctor",
+          "when": "view == gitwe.branches",
+          "group": "navigation@4"
         },
         {
           "command": "gitwe.openDashboard",
           "when": "view == gitwe.branches",
-          "group": "navigation"
+          "group": "navigation@5"
         },
         {
-          "command": "gitwe.start",
+          "command": "gitwe.refreshBranches",
           "when": "view == gitwe.branches",
-          "group": "navigation"
+          "group": "navigation@6"
+        },
+        {
+          "command": "gitwe.checkout",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@1"
+        },
+        {
+          "command": "gitwe.track",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@2"
+        },
+        {
+          "command": "gitwe.updateCurrent",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@3"
+        },
+        {
+          "command": "gitwe.pull",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@4"
+        },
+        {
+          "command": "gitwe.publishCurrent",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@5"
+        },
+        {
+          "command": "gitwe.finishCurrent",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@6"
+        },
+        {
+          "command": "gitwe.rename",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@7"
+        },
+        {
+          "command": "gitwe.deleteCurrent",
+          "when": "view == gitwe.branches",
+          "group": "1_workflow@8"
+        },
+        {
+          "command": "gitwe.doctorFix",
+          "when": "view == gitwe.branches",
+          "group": "2_maintenance@1"
+        },
+        {
+          "command": "gitwe.validate",
+          "when": "view == gitwe.branches",
+          "group": "2_maintenance@2"
+        },
+        {
+          "command": "gitwe.rebase",
+          "when": "view == gitwe.branches",
+          "group": "2_maintenance@3"
+        },
+        {
+          "command": "gitwe.abort",
+          "when": "view == gitwe.branches",
+          "group": "2_maintenance@4"
+        },
+        {
+          "command": "gitwe.tag",
+          "when": "view == gitwe.branches",
+          "group": "2_maintenance@5"
+        },
+        {
+          "command": "gitwe.graph",
+          "when": "view == gitwe.branches",
+          "group": "3_insights@1"
+        },
+        {
+          "command": "gitwe.log",
+          "when": "view == gitwe.branches",
+          "group": "3_insights@2"
         }
       ],
       "view/item/context": [
@@ -370,8 +466,7 @@
     "check-types": "tsc -p ./ --noEmit",
     "watch": "node esbuild.js --watch",
     "typecheck": "tsc --noEmit -p ./",
-    "package": "vsce package",
-    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\""
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
